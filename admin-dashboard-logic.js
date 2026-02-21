@@ -15,7 +15,9 @@ const ROADMAP_STEPS = {
     "2": "⚖️ בדיקות ומשא ומתן",
     "3": "🖊️ חתימה ומימון",
     "4": "🔑 קבלת מפתח ושיפוץ",
-    "5": "🎊 מזל טוב!"
+    "5": "🎊 מזל טוב!",
+    "6": "❄️ הקפאה",
+    "7": "🚫 בוטל"
 };
 
 const switchTab = (target) => {
@@ -523,7 +525,6 @@ onSnapshot(collection(db, "projects"), (snap) => {
                         </div>
                     </td>
                     <td style="vertical-align: top;">
-                        <div style="margin-bottom:5px;">${FinanceLogic.STATUSES[d.status] || d.status}</div>
                         <div style="background: #222; color: #FFD700; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid #333; font-weight: bold; width: fit-content;">${roadmapText}</div>
                     </td>
                     <td style="width: 200px;">

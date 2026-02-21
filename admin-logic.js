@@ -17,7 +17,9 @@ const STATUS_TO_ROADMAP_STEP = {
     'RESEARCH': '2',
     'SIGNING': '3',
     'DELIVERY': '4',
-    'DONE': '5'
+    'DONE': '5',
+	'FROZEN': '6',   // הקפאה
+    'CANCELLED': '7' // בוטל
 };
 
 async function logAction(msg) {
