@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>עריכת תיק לקוח | לי אטדגי</title>
+    <style>
+        body { background: #f4f7f9; font-family: 'Segoe UI', sans-serif; direction: rtl; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid #FFD700; padding-bottom: 15px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit; transition: 0.3s; }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        .btn { padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; font-size: 15px; }
+        .btn-primary { background: #2c3e50; color: white; }
+        .btn-primary:hover { background: #34495e; }
+        .btn-save { background: #27ae60; color: white; width: 100%; font-size: 18px; margin-top: 20px; }
+        .btn-save.unsaved { background: #e67e22; animation: pulse-save 2s infinite; }
+        @keyframes pulse-save { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        
+        .bank-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; position: relative; }
+        .bank-item:hover { background: #f9f9f9; }
+        
+        .bank-item.selected { 
+            background: #fff9e6 !important; 
+            border: 2px solid #FFD700; 
+            border-radius: 8px;
+            margin: 5px;
+        }
+        .bank-item.selected::after {
+            content: '✓';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #FFD700;
+            color: black;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; width: 80%; max-width: 700px; border-radius: 15px; max-height: 85vh; display: flex; flex-direction: column; }
+        #bank-list { overflow-y: auto; flex-grow: 1; margin-top: 15px; border: 1px solid #eee; border-radius: 8px; }
+
+        .assigned-list { margin-top: 15px; }
+        .assigned-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #2c3e50; }
+        
+        .urgent-active { border: 2px solid #e74c3c !important; background: #fff5f5 !important; }
+        .save-banner { display: none; background: #e67e22; color: white; text-align: center; padding: 10px; position: sticky; top: 0; z-index: 1001; font-weight: bold; border-radius: 0 0 10px 10px; }
+
+        .featured-wrapper {
+            display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #eee; cursor: pointer; margin-top: 10px;
+        }
+        .featured-wrapper input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="save-status" class="save-banner">⚠️ שימי לב: ישנם שינויים בתיק שטרם נשמרו!</div>
+
+<header>
+    <div>
+        <h1 id="client-name-title" style="margin:0;">טוען לקוח...</h1>
+        <p style="margin:5px 0 0 0; color:#666;">עריכת תוכנית עבודה ושידוך נכסים</p>
+    </div>
+    <button class="btn btn-primary" onclick="window.handleGoBack()">חזרה לניהול הראשי</button>
+</header>
+
+<div class="grid">
+    <div class="card">
+        <h3>📍 פרטי תיק וסטטוס התקדמות</h3>
+        <label>שם הלקוח:</label>
+        <input type="text" id="in-clientName" class="track-change">
+        
+        <label>מספר טלפון:</label>
+        <input type="text" id="in-clientPhone" class="track-change">
+
+        <label>סטטוס ושלב בציר הזמן (Roadmap):</label>
+        <select id="in-status" class="track-change">
+            <optgroup label="שלבי ציר זמן פעילים">
+                <option value="INITIAL">🔍 שלב 1: חיפוש ואיתור נכס</option>
+                <option value="RESEARCH">⚖️ שלב 2: בדיקות ומשא ומתן</option>
+                <option value="SIGNING">🖊️ שלב 3: חתימה ומימון</option>
+                <option value="DELIVERY">🔑 שלב 4: קבלת מפתח ושיפוץ</option>
+                <option value="DONE">🎊 שלב 5: מזל טוב - העסקה הושלמה!</option>
+            </optgroup>
+            <optgroup label="ניהול פנימי">
+                <option value="FROZEN">❄️ בהקפאה (ציר הזמן יישמר)</option>
+                <option value="CANCELLED">❌ בוטל (תיק לא פעיל)</option>
+            </optgroup>
+        </select>
+        <p style="font-size: 11px; color: #888; margin-top: 5px;">* בחירה בסטטוס מעדכנת אוטומטית את ציר הזמן שמוצג ללקוח בפורטל.</p>
+
+        <div style="margin-top:20px; padding:15px; background:#fdfdfd; border-radius:10px; border:1px solid #eee;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label style="margin:0;">📝 הערות פרטיות (לא ללקוח):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="in-isNotesUrgent" class="track-change" style="width:18px; height:18px; cursor:pointer;">
+                    <label for="in-isNotesUrgent" style="margin:0; color:#e74c3c; cursor:pointer;">⚠️ דחוף לטיפול</label>
+                </div>
+            </div>
+            <textarea id="in-privateNotes" class="track-change" placeholder="רשמי כאן הערות למעקב אישי..."></textarea>
+            
+            <label style="margin-top:10px;">📅 תאריך למעקב הבא:</label>
+            <input type="date" id="in-followUpDate" class="track-change">
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <h3>💰 הגדרות פיננסיות (אחוזים)</h3>
+            <div class="grid">
+                <div>
+                    <label>עו"ד מכירה (%):</label>
+                    <input type="number" id="in-lawyerRateSale" step="0.1" class="track-change" placeholder="0.5">
+                </div>
+                <div>
+                    <label>עו"ד קנייה (%):</label>
+                    <input type="number" id="in-lawyerRatePurch" step="0.1" class="track-change" placeholder="0.5">
+                </div>
+            </div>
+            <div class="grid" style="margin-top:15px;">
+                <div>
+                    <label>תיווך מכירה (%):</label>
+                    <input type="number" id="in-brokerageRateSale" step="0.1" class="track-change" placeholder="2">
+                </div>
+                <div>
+                    <label>תיווך קנייה (%):</label>
+                    <input type="number" id="in-brokerageRatePurch" step="0.1" class="track-change" placeholder="2">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎯 העדפות התאמה אישית (1-5)</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">הגדירי עד כמה כל פרמטר חשוב ללקוח לטובת חישוב מדד ההתאמה.</p>
+            <div class="grid">
+                <div>
+                    <label>חשיבות חינוך:</label>
+                    <input type="number" id="in-prefEdu" min="1" max="5" step="0.1" class="track-change" value="3">
+                </div>
+                <div>
+                    <label>חשיבות תחבורה:</label>
+                    <input type="number" id="in-prefTrans" min="1" max="5" step="0.1" class="track-change" value="3">
+                </div>
+            </div>
+            <div class="grid" style="margin-top:15px;">
+                <div>
+                    <label>חשיבות פנאי:</label>
+                    <input type="number" id="in-prefLeisure" min="1" max="5" step="0.1" class="track-change" value="3">
+                </div>
+                <div>
+                    <label>חשיבות ים:</label>
+                    <input type="number" id="in-prefSea" min="1" max="5" step="0.1" class="track-change" value="3">
+                </div>
+            </div>
+            
+            <label class="featured-wrapper" style="margin-top:20px;">
+                <input type="checkbox" id="in-limitHighFloor" class="track-change">
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:bold; color:#2c3e50;">🚫 הימנעות מקומות גבוהות</span>
+                    <span style="font-size:11px; color:#666;">יוריד משמעותית את ציון ההתאמה לנכסים מעל קומה 4.</span>
+                </div>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>🏠 נכסים משויכים לתיק זה</h3>
+        <button class="btn btn-primary" onclick="window.openBankModal()">➕ הוסיפי נכס מבנק הנכסים</button>
+    </div>
+    <div id="assigned-props-list" class="assigned-list"></div>
+</div>
+
+<button id="btn-save-all" class="btn btn-save">💾 שמירת כל השינויים בתיק הלקוח</button>
+
+<div id="bank-modal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">בחירת נכסים לשיוך</h3>
+            <button onclick="document.getElementById('bank-modal').style.display='none'" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
+        </div>
+        <p style="color:#666; margin:10px 0;">סמני את כל הנכסים שברצונך לשייך ללקוח ולחצי על "אישור שיוך" בסיום.</p>
+        <input type="text" id="bank-search" placeholder="חפשי לפי כתובת או עיר..." style="margin-top:10px;">
+        
+        <div id="bank-list"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button id="btn-confirm-selection" class="btn btn-save" style="margin-top:0; flex:2;">✅ אישור שיוך הנכסים שנבחרו</button>
+            <button onclick="document.getElementById('bank-modal').style.display='none'" class="btn" style="background:#eee; flex:1;">ביטול</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    window.currentFavorites = []; 
+    window.hasUnsavedChanges = false;
+    
+    // מעקב אחרי שינויים כדי להתריע לפני יציאה
+    document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('track-change')) {
+            window.hasUnsavedChanges = true;
+            document.getElementById('save-status').style.display = 'block';
+            document.getElementById('btn-save-all').classList.add('unsaved');
+        }
+    });
+
+    window.handleGoBack = () => {
+        if (window.hasUnsavedChanges) {
+            if (confirm("ביצעת שינויים בתיק שטרם נשמרו. האם את בטוחה שברצונך לצאת ללא שמירה?")) {
+                window.location.href = 'admin.html';
+            }
+        } else {
+            window.location.href = 'admin.html';
+        }
+    };
+
+    window.addEventListener('beforeunload', (e) => {
+        if (window.hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // פונקציית עזר לניקוי דגלי שינויים לאחר שמירה
+    window.clearChangeFlags = () => {
+        window.hasUnsavedChanges = false;
+        document.getElementById('save-status').style.display = 'none';
+        document.getElementById('btn-save-all').classList.remove('unsaved');
+    };
+
+    // לוגיקה למיפוי סטטוס לשלב Roadmap (בזמן שמירה)
+    window.getRoadmapStepFromStatus = (status) => {
+        const mapping = {
+            'INITIAL': '1',
+            'RESEARCH': '2',
+            'SIGNING': '3',
+            'DELIVERY': '4',
+            'DONE': '5',
+            'FROZEN': null, // לא מעדכן את השלב
+            'CANCELLED': null
+        };
+        return mapping[status] || null;
+    };
+</script>
+
+<script type="module" src="admin-logic.js"></script>
+
+</body>
+</html>

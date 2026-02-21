@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הנכסים הנבחרים | לי אטדגי</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --primary: #D4AF37; --secondary: #1a1a1a; --bg: #f4f7f9; --gold-light: #fffdf0; --danger: #e74c3c; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; direction: rtl; color: #2c3e50; overflow-x: hidden; }
+        
+        header { background: #000; padding: 15px 40px; border-bottom: 4px solid var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        
+        .hero-section { background: #000; color: white; padding: 60px 20px 100px 20px; text-align: center; }
+        .hero-title { font-size: 32px; font-weight: 800; margin: 0 0 10px 0; line-height: 1.2; }
+        .hero-subtitle { color: var(--primary); font-size: 18px; font-weight: 600; opacity: 0.9; }
+
+        .container { max-width: 1200px; margin: -60px auto 50px auto; padding: 0 20px; position: relative; z-index: 10; }
+        
+        .prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+        
+        .prop-card { 
+            background: white; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            border: 1px solid #eee; 
+            display: flex; 
+            flex-direction: column; 
+            transition: 0.3s;
+            position: relative;
+        }
+        .prop-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
+        
+        .prop-main-info { padding: 25px; flex-grow: 1; }
+        .prop-address { font-size: 20px; font-weight: 800; margin-bottom: 5px; color: var(--secondary); }
+        .prop-price { font-size: 24px; font-weight: 800; color: #000; margin-bottom: 15px; }
+        
+        .prop-specs { display: flex; gap: 15px; margin-bottom: 15px; color: #7f8c8d; font-size: 13px; background: #f8f9fa; padding: 10px; border-radius: 10px; }
+        .spec-item { display: flex; align-items: center; gap: 5px; }
+
+        .lee-tip-box { background: var(--gold-light); border-right: 4px solid var(--primary); padding: 12px; border-radius: 6px; font-style: italic; font-size: 13px; margin-bottom: 15px; line-height: 1.5; color: #5d4e1f; }
+        
+        .ai-analysis-container { background: #fafafa; padding: 12px; border-radius: 10px; border: 1px dashed #ddd; position: relative; }
+        .ai-text { font-size: 13px; color: #555; line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .ai-text.expanded { -webkit-line-clamp: unset; }
+        .read-more-btn { background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer; font-size: 12px; padding: 5px 0; }
+
+        .prop-map { width: 100%; height: 130px; border-radius: 10px; margin-top: 15px; border: 1px solid #eee; }
+
+        .btn-cta { 
+            background: var(--secondary); 
+            color: var(--primary); 
+            border: none;
+            padding: 18px; 
+            font-weight: 800; 
+            text-decoration: none; 
+            text-align: center; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            transition: 0.3s; 
+        }
+        .btn-cta:hover { background: var(--primary); color: black; }
+
+        /* מסוע הצלחות */
+        .archive-section { margin-top: 80px; padding-top: 40px; border-top: 1px solid #ddd; }
+        .archive-carousel { width: 100%; overflow: hidden; position: relative; padding: 20px 0; }
+        .archive-track { display: flex; gap: 20px; width: max-content; animation: scrollArchive 40s linear infinite; }
+        .archive-track:hover { animation-play-state: paused; }
+        @keyframes scrollArchive { 0% { transform: translateX(0); } 100% { transform: translateX(50%); } }
+
+        .archive-track .prop-card { 
+            min-width: 300px; max-width: 300px; filter: grayscale(1); opacity: 0.7; transform: scale(0.9); transition: 0.3s;
+        }
+        .archive-track .prop-card:hover { filter: grayscale(0); opacity: 1; transform: scale(0.95); }
+        .prop-status-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; z-index: 10; pointer-events: none; }
+        .status-stamp { border: 4px solid var(--danger); color: var(--danger); font-size: 24px; font-weight: 900; padding: 5px 15px; transform: rotate(-15deg); border-radius: 8px; background: white; }
+
+        /* מודאל אודות */
+        .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 92%; max-width: 420px; border-radius: 20px; position: relative; overflow: hidden; }
+        .close-x { position: absolute; top: 15px; right: 15px; z-index: 100; color: white; cursor: pointer; background: rgba(0,0,0,0.4); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        @media (max-width: 600px) { 
+            .prop-grid { grid-template-columns: 1fr; } 
+            .hero-title { font-size: 24px; }
+            header { padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-weight:bold; font-size:18px; color:var(--primary);">נבחרת הנכסים</div>
+    <div onclick="openAbout()" style="cursor: pointer; display: flex; align-items: center; gap: 10px;">
+        <img src="logo.png" alt="Logo" style="height:40px;">
+        <span style="border-right: 1px solid var(--primary); padding-right: 10px; font-weight: bold; font-size: 13px;">השיטה של לי</span>
+    </div>
+</header>
+
+<section class="hero-section">
+    <div class="hero-title">כשמוכרים <span style="color: var(--primary);">מהגובה הנכון</span>, רואים רחוק יותר.</div>
+    <div class="hero-subtitle">הזדמנויות נדל"ן בניתוח מקצועי של לי אטדגי</div>
+</section>
+
+<div class="container">
+    <div id="catalog-list" class="prop-grid"></div>
+
+    <div id="archive-section" class="archive-section" style="display:none;">
+        <h3 style="text-align: center; margin-bottom: 30px; color: var(--secondary); font-weight: 800;">
+            <i data-lucide="award" style="vertical-align: middle; margin-left: 8px; color: var(--primary);"></i>
+            הצלחות אחרונות בשיטה של לי
+        </h3>
+        <div id="archive-list" class="archive-carousel"></div>
+    </div>
+</div>
+
+<div id="about-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-x" onclick="closeAbout()"><i data-lucide="x"></i></span>
+        <div style="background: #000; padding: 40px 20px 25px 20px; text-align: center; color: white;">
+            <div style="width: 90px; height: 90px; margin: 0 auto 15px auto; border: 3px solid #FFD700; border-radius: 50%; overflow: hidden;">
+                <img src="li-profile.jpg" alt="לי אטדגי" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <h2 style="margin: 0; font-size: 24px;">לי אטדגי</h2>
+            <div style="color: #FFD700; font-size: 14px; margin-top: 5px;">אסטרטגיה וליווי עסקאות נדל"ן</div>
+        </div>
+        <div style="padding: 25px; text-align: center;">
+            <p style="font-style: italic; color: #555; margin-bottom: 20px; font-size: 14px;">"אני כאן כדי לוודא שכל צעד בדרך לבית החדש שלכם נעשה בביטחון מלא ובמקצועיות ללא פשרות."</p>
+            <a href="https://wa.me/972533386345" target="_blank" style="background: #25d366; color: white; padding: 12px; border-radius: 12px; text-decoration: none; font-weight: bold; display: block; margin-bottom: 10px;">דברו איתי בוואטסאפ</a>
+            <a href="tel:0533386345" style="color: #333; text-decoration: none; font-weight: bold; font-size: 14px;">053-3386345</a>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const listElement = document.getElementById('catalog-list');
+    const archiveList = document.getElementById('archive-list');
+    const archiveSection = document.getElementById('archive-section');
+
+    // שליפת כל הנכסים בבנק
+    onSnapshot(collection(db, "property_bank"), (snap) => {
+        const allProps = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // נכסים אקטיביים שהם Featured
+        const activeFeatured = allProps.filter(p => p.status === 'ACTIVE' && p.featured === true);
+        
+        // נכסים שנמכרו/נקנו
+        const closedProps = allProps.filter(p => p.status === 'SOLD' || p.status === 'BOUGHT');
+
+        // רינדור אקטיביים
+        if (activeFeatured.length === 0) {
+            listElement.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 50px; background: white; border-radius: 20px;">כרגע אין נכסים ציבוריים מוצגים. חזרו בקרוב!</div>`;
+        } else {
+            listElement.innerHTML = activeFeatured.map(p => renderCard(p, false)).join('');
+        }
+
+        // רינדור ארכיון (מסוע)
+        if (closedProps.length > 0) {
+            const content = closedProps.map(p => renderCard(p, true)).join('');
+            archiveList.innerHTML = `<div class="archive-track">${content}${content}</div>`;
+            archiveSection.style.display = 'block';
+        }
+
+        lucide.createIcons();
+    });
+
+    function renderCard(p, isArchive) {
+        const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
+        const statusStamp = p.status === 'SOLD' ? 'נמכר!' : 'נקנה!';
+        
+        return `
+        <div class="prop-card">
+            ${isArchive ? `<div class="prop-status-overlay"><div class="status-stamp">${statusStamp}</div></div>` : ''}
+            <div class="prop-main-info">
+                <div class="prop-address">${p.address}, ${p.city || ''}</div>
+                <div class="prop-price">₪${(p.price || 0).toLocaleString()}</div>
+                <div class="prop-specs">
+                    <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
+                    <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
+                    <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
+                </div>
+                ${!isArchive && p.leeTip ? `<div class="lee-tip-box"><strong>הטיפ של לי:</strong><br>${p.leeTip}</div>` : ''}
+                ${!isArchive ? `
+                    <div class="ai-analysis-container">
+                        <div style="display:flex; align-items:center; gap:5px; color:var(--primary); font-weight:800; font-size:12px; margin-bottom:5px;">
+                            <i data-lucide="sparkles" size="14"></i> ניתוח מומחית (AI)
+                        </div>
+                        <div class="ai-text" id="ai-${p.id}">${p.aiAnalysis || 'ניתוח בדרך...'}</div>
+                        <button class="read-more-btn" onclick="toggleAiText('${p.id}')">קראי עוד...</button>
+                    </div>
+                    <iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>
+                ` : ''}
+            </div>
+            ${!isArchive ? `
+                <a href="https://wa.me/972533386345?text=${encodeURIComponent('היי לי, ראיתי את הנכס ב'+p.address+' בקטלוג שלך, אשמח לשמוע פרטים נוספים.')}" class="btn-cta">
+                    <i data-lucide="message-circle"></i> מעניין אותי! דברי איתי
+                </a>
+            ` : ''}
+        </div>`;
+    }
+
+    window.toggleAiText = (id) => {
+        const text = document.getElementById('ai-' + id);
+        const btn = text.nextElementSibling;
+        if (text.classList.contains('expanded')) {
+            text.classList.remove('expanded');
+            btn.innerText = 'קראי עוד...';
+        } else {
+            text.classList.add('expanded');
+            btn.innerText = 'הצג פחות';
+        }
+    };
+
+    window.openAbout = () => document.getElementById('about-modal').style.display = 'flex';
+    window.closeAbout = () => document.getElementById('about-modal').style.display = 'none';
+    lucide.createIcons();
+</script>
+</body>
+</html>

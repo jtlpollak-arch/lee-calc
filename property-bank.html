@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לי אטדגי | בנק נכסים מרכזי</title>
+    <style>
+        body { background: #f4f7f9; color: #333; font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl; margin: 0; }
+        header { background: #2c3e50; padding: 20px 40px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #2c3e50; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
+        input, textarea, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        .btn-save { background: #27ae60; color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-save:hover { background: #219150; }
+        .bank-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .bank-table th { background: #eee; padding: 12px; text-align: right; border-bottom: 2px solid #ddd; }
+        .bank-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-edit { color: #3498db; cursor: pointer; border: none; background: none; font-weight: bold; margin-left: 10px; }
+        .btn-delete { color: #e74c3c; cursor: pointer; border: none; background: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="font-size: 24px; font-weight: bold; color: #FFD700;">לי אטדגי - ניהול בנק נכסים</div>
+        <a href="admin.html" style="background:#FFD700; color:black; text-decoration:none; padding:10px 20px; border-radius:5px; font-weight:bold;">← חזרה לניהול לקוחות</a>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h3 id="form-title">הוסיפי נכס חדש למאגר</h3>
+                <input type="hidden" id="edit-id">
+                
+                <label>כתובת הנכס:</label>
+                <input type="text" id="p-address" placeholder="למשל: הרצל 10, פתח תקווה">
+                
+                <label>מחיר מבוקש (₪):</label>
+                <input type="text" id="p-price" placeholder="0">
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                    <div>
+                        <label>מספר חדרים:</label>
+                        <input type="number" id="p-rooms" step="0.5">
+                    </div>
+                    <div>
+                        <label>קומה:</label>
+                        <input type="number" id="p-floor">
+                    </div>
+                    <div>
+                        <label>מ"ר:</label>
+                        <input type="number" id="p-sqm">
+                    </div>
+                </div>
+                
+                <label>לינק (יד2 / מדלן):</label>
+                <input type="text" id="p-link" placeholder="https://...">
+                
+                <button class="btn-save" id="btn-save-bank">שמרי בבנק הנכסים</button>
+            </div>
+
+            <div class="card">
+                <h3>מאגר נכסים קיים</h3>
+                <table class="bank-table">
+                    <thead>
+                        <tr>
+                            <th>כתובת</th>
+                            <th>מחיר</th>
+                            <th>פרמטרים</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bank-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { FinanceLogic } from './shared.js';
+
+        const priceInput = document.getElementById('p-price');
+        priceInput.oninput = (e) => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = FinanceLogic.formatNumber(val);
+        };
+
+        document.getElementById('btn-save-bank').onclick = async () => {
+            const editId = document.getElementById('edit-id').value;
+            const data = {
+                address: document.getElementById('p-address').value,
+                price: FinanceLogic.cleanNumber(document.getElementById('p-price').value),
+                rooms: document.getElementById('p-rooms').value,
+                floor: document.getElementById('p-floor').value,
+                sqm: document.getElementById('p-sqm').value,
+                link: document.getElementById('p-link').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            if(!data.address || !data.price) return alert("נא למלא כתובת ומחיר");
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(db, "property_bank", editId), data);
+                    document.getElementById('edit-id').value = "";
+                    document.getElementById('form-title').innerText = "הוסיפי נכס חדש למאגר";
+                } else {
+                    await addDoc(collection(db, "property_bank"), data);
+                }
+                
+                document.querySelectorAll('input').forEach(i => i.value = "");
+                alert("המאגר עודכן בהצלחה!");
+            } catch (e) { console.error(e); }
+        };
+
+        onSnapshot(collection(db, "property_bank"), (snap) => {
+            const body = document.getElementById('bank-body');
+            body.innerHTML = "";
+            snap.forEach(s => {
+                const d = s.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.address}</td>
+                    <td>₪${FinanceLogic.formatNumber(d.price)}</td>
+                    <td>${d.rooms} חד', ק' ${d.floor}, ${d.sqm} מ"ר</td>
+                    <td>
+                        <button class="btn-edit" onclick="window.prepareEdit('${s.id}', ${JSON.stringify(d).replace(/"/g, '&quot;')})">עריכה</button>
+                        <button class="btn-delete" onclick="window.deleteEntry('${s.id}')">מחיקה</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        });
+
+        window.prepareEdit = (id, data) => {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('p-address').value = data.address;
+            document.getElementById('p-price').value = FinanceLogic.formatNumber(data.price);
+            document.getElementById('p-rooms').value = data.rooms;
+            document.getElementById('p-floor').value = data.floor;
+            document.getElementById('p-sqm').value = data.sqm;
+            document.getElementById('p-link').value = data.link;
+            document.getElementById('form-title').innerText = "עריכת נכס קיים";
+            window.scrollTo(0,0);
+        };
+
+        window.deleteEntry = async (id) => {
+            if(confirm("האם את בטוחה שברצונך למחוק נכס זה מהמאגר המרכזי?")) {
+                await deleteDoc(doc(db, "property_bank", id));
+            }
+        };
+    </script>
+</body>
+</html>

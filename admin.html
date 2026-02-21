@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לי אטדגי | ניהול מרכזי</title>
+    <style>
+        body { background: #050505; color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; direction: rtl; }
+        header { background: #000; padding: 20px 40px; border-bottom: 2px solid #FFD700; display: flex; justify-content: space-between; align-items: center; }
+        .main-container { padding: 40px; max-width: 1400px; margin: auto; }
+        .tabs-nav { display: flex; gap: 20px; margin-bottom: 30px; border-bottom: 1px solid #333; }
+        .tab-btn { background: none; border: none; color: #888; font-size: 20px; font-weight: bold; cursor: pointer; padding: 10px 30px; transition: 0.3s; position: relative; }
+        .tab-btn.active { color: #FFD700; border-bottom: 4px solid #FFD700; }
+        .section-content { display: none; }
+        .section-content.active { display: block; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .btn-add { background: #FFD700; color: black; border: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; background: #121212; border-radius: 12px; overflow: hidden; }
+        th { background: #1a1a1a; color: #FFD700; padding: 18px; text-align: right; border-bottom: 2px solid #333; }
+        td { padding: 18px; border-bottom: 1px solid #222; }
+        .btn-action { color: #FFD700; text-decoration: none; border: 1px solid #FFD700; padding: 6px 15px; border-radius: 5px; font-size: 14px; margin-left: 5px; cursor: pointer; background: none; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-del { color: #ff7675; border-color: #ff7675; }
+        
+        .btn-whatsapp { 
+            color: #25D366; 
+            border-color: #25D366; 
+            font-weight: bold;
+        }
+        .btn-whatsapp:hover { 
+            background: #25D366; 
+            color: black; 
+        }
+
+        .btn-view-client {
+            color: #a29bfe;
+            border-color: #6c5ce7;
+            font-weight: bold;
+        }
+        .btn-view-client:hover {
+            background: #6c5ce7;
+            color: white;
+        }
+
+        .btn-match-users {
+            color: #00cec9;
+            border-color: #00cec9;
+            font-weight: bold;
+        }
+        .btn-match-users:hover {
+            background: #00cec9;
+            color: black;
+        }
+		
+		.btn-action:hover {
+			opacity: 0.8;
+			transform: translateY(-1px);
+		}
+
+        .btn-inject { color: #8e44ad; border-color: #8e44ad; } 
+        .btn-inject:hover { background: #8e44ad; color: white; }
+        
+        .fav-badge { background: #e74c3c; color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; margin: 2px; display: inline-block; cursor: pointer; }
+        .rating-badge { background: #D4AF37; color: black; padding: 3px 10px; border-radius: 15px; font-size: 11px; margin: 2px; display: inline-block; font-weight: bold; cursor: pointer; }
+        .prop-badge { background: #3498db; color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; margin: 2px; display: inline-block; cursor: pointer; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
+        .modal-content { background: #1a1a1a; margin: 2% auto; padding: 35px; border: 1px solid #FFD700; width: 650px; border-radius: 15px; max-height: 90vh; overflow-y: auto; }
+        
+        /* עיצוב מיוחד למודאל נכס רחב */
+        .modal-content.wide-prop-modal { width: 90%; max-width: 1200px; }
+        .prop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+        .prop-section { background: #000; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; text-align: right; direction: rtl; }
+        
+        .links-textarea {
+            direction: ltr !important;
+            text-align: left !important;
+            min-height: 80px;
+            resize: vertical;
+            border: 1px solid #FFD700 !important;
+            white-space: pre !important;
+            overflow-x: auto !important;
+        }
+
+        .ai-btn { 
+            background: linear-gradient(45deg, #8e44ad, #3498db); 
+            color: white; border: none; padding: 15px; border-radius: 6px; 
+            cursor: pointer; font-weight: bold; width: 100%; 
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s;
+        }
+        .ai-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #444; }
+        
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ai-analyzing {
+            border: 1px solid #8e44ad !important;
+            box-shadow: 0 0 15px rgba(142, 68, 173, 0.3);
+            background: #0a0510 !important;
+            animation: pulse-bg 2s infinite;
+        }
+        @keyframes pulse-bg {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        #cities-list-admin { 
+            margin-top: 15px; background: #000; border-radius: 8px; padding: 10px; min-height: 100px; border: 1px solid #333; 
+        }
+
+        .city-item-admin {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #1a1a1a; padding: 10px 15px; margin-bottom: 8px; border-radius: 6px;
+            border: 1px solid #222; color: #FFD700; font-weight: bold;
+        }
+
+        .city-item-admin button {
+            background: #ff7675; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s;
+        }
+
+        .featured-wrapper {
+            display: flex; align-items: center; gap: 10px; background: #222; padding: 12px; border-radius: 8px; margin: 10px 0; border: 1px solid #333; cursor: pointer;
+        }
+        .featured-wrapper input[type="checkbox"] {
+            width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: #FFD700;
+        }
+
+        .btn-clear-logs {
+            background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s;
+        }
+
+        .log-filter-box {
+            background: #000; border: 1px solid #333; color: #FFD700; padding: 8px 15px; border-radius: 6px; width: 250px; margin-left: 15px;
+        }
+
+        .finance-card-admin {
+            background: #0a0a0a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin: 15px 0;
+        }
+        .finance-card-admin h4 { margin-top: 0; color: #FFD700; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        label { color: #FFD700; font-size: 13px; font-weight: bold; display: block; margin-top: 10px; }
+
+        .client-match-item {
+            padding: 10px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        .client-match-item:hover { background: #222; }
+        .client-match-item.selected { background: #00cec933; border-right: 4px solid #00cec9; }
+
+        /* סגנון לשלב ציר הזמן בטבלה */
+        .roadmap-step-badge {
+            background: #222;
+            color: #FFD700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            border: 1px solid #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="font-size: 24px; font-weight: bold; color: #FFD700;">לי אטדגי - ניהול מרכזי</div>
+        <img src="logo.png" alt="לוגו" style="height:60px;">
+    </header>
+
+    <main class="main-container">
+        <div class="tabs-nav">
+            <button class="tab-btn active" id="btn-show-clients">ניהול לקוחות</button>
+            <button class="tab-btn" id="btn-show-props">בנק נכסים</button>
+            <button class="tab-btn" id="btn-show-providers">נבחרת המומחים</button>
+            <button class="tab-btn" id="btn-show-consults">בקשות ייעוץ 🔍</button>
+            <button class="tab-btn" id="btn-show-logs">יומן פעילות</button>
+            <button class="tab-btn" id="btn-show-settings">הגדרות מערכת</button>
+        </div>
+
+        <div id="section-clients" class="section-content active">
+            <div class="admin-header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 style="margin:0;">תיקי לקוחות</h2>
+                    <input type="text" id="client-search-input" placeholder="חפשי לקוח לפי שם..." style="width:220px; margin:0;">
+                </div>
+                <button class="btn-add" id="open-new-client-modal">לקוח חדש +</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם הלקוח</th>
+                        <th>סטטוס / שלב בדרך</th>
+                        <th>נכסים משויכים 🏠</th>
+                        <th>נכסים מועדפים ❤️</th>
+                        <th>דירוגי נכסים ⭐</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-tbody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-props" class="section-content">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <h2 style="margin:0;">בנק נכסים</h2>
+                    <select id="bank-city-filter" style="width:160px; margin:0;">
+                        <option value="">כל הערים</option>
+                    </select>
+                    <input type="text" id="bank-search-input" placeholder="חפשי רחוב..." style="width:180px; margin:0;">
+                </div>
+                <button class="btn-add" id="open-new-prop-modal">נכס חדש +</button>
+            </div>
+            <table><thead><tr><th>כתובת ועיר</th><th>מחיר</th><th>מפרט / מדדים</th><th>פעולות</th></tr></thead><tbody id="props-tbody"></tbody></table>
+        </div>
+
+        <div id="section-providers" class="section-content">
+            <div class="admin-header">
+                <h2 style="margin:0;">נבחרת המומחים (שירותים משלימים)</h2>
+                <button class="btn-add" id="open-new-provider-modal" onclick="document.getElementById('provider-modal').style.display='block'">איש מקצוע חדש +</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם המומחה</th>
+                        <th>תחום</th>
+                        <th>טלפון</th>
+                        <th>תיאור / הערה</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="providers-tbody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-consults" class="section-content">
+            <div class="admin-header"><h2>בקשות ניתוח מלקוחות</h2></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם הלקוח</th>
+                        <th>הלינק / הכתובת שנשלחה</th>
+                        <th>זמן שליחה</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="consults-tbody"></tbody>
+            </table>
+        </div>
+
+        <div id="section-logs" class="section-content">
+            <div class="admin-header">
+                <div style="display:flex; align-items:center;">
+                    <h2>יומן פעילות מערכת</h2>
+                    <input type="text" id="log-search" class="log-filter-box" placeholder="חפשי לקוח או פעולה...">
+                </div>
+                <button class="btn-clear-logs" id="clear-logs-btn">נקה יומן פעילות ✖</button>
+            </div>
+            <table><thead><tr><th>זמן</th><th>פעולה שבוצעה</th></tr></thead><tbody id="logs-tbody"></tbody></table>
+        </div>
+
+        <div id="section-settings" class="section-content">
+            <div class="settings-grid">
+                <div>
+                    <h2>ניהול אזורי פעילות (ערים)</h2>
+                    <div style="background:#1a1a1a; padding:25px; border-radius:12px; border:1px solid #333;">
+                        <label>הוסיפי עיר חדשה:</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="new-city-name" placeholder="שם העיר (למשל: תל אביב)">
+                            <button class="btn-add" id="add-city-btn" style="white-space:nowrap;">הוספה</button>
+                        </div>
+                        <div id="cities-list-admin"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h2>הגדרות מנוע AI</h2>
+                    <div style="background:#1a1a1a; padding:25px; border-radius:12px; border:1px solid #333;">
+                        <label>Gemini API Key (מפתח ענן):</label>
+                        <input type="password" id="ai-api-key" placeholder="הזיני מפתח מ-Google AI Studio">
+                        <button class="btn-action" id="save-ai-settings" style="width:100%; margin-top:10px; padding:12px;">שמרי הגדרות AI</button>
+                    </div>
+                </div>
+				
+				<div style="margin-top: 30px;">
+					<h2 style="color: #ff7675;">ניהול מסד נתונים</h2>
+					<div style="background: rgba(231, 76, 60, 0.1); padding: 25px; border-radius: 12px; border: 1px solid #ff7675;">
+						<label style="color: #ff7675;">⚠️ אזור מסוכן: מחיקת כל הנתונים</label>
+						<p style="font-size: 13px; color: #ccc; margin-bottom: 15px;">פעולה זו תמחוק את כל הלקוחות, בנק הנכסים, הערים ויומן הפעילות. לא ניתן לשחזר נתונים שנמחקו!</p>
+						<button class="btn-action btn-del" id="master-reset-db" style="width: 100%; padding: 15px; font-weight: bold; font-size: 16px;">
+							מחיקת כל הנתונים ואיפוס DB 💣
+						</button>
+					</div>
+				</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="prop-modal" class="modal">
+        <div class="modal-content wide-prop-modal">
+            <h3 id="prop-modal-title" style="border-bottom: 2px solid #FFD700; padding-bottom: 10px;">פרטי נכס בבנק</h3>
+            <input type="hidden" id="edit-prop-id">
+            
+            <div class="prop-grid">
+                <div class="prop-section">
+                    <label>עיר:</label>
+                    <select id="p-city-select"><option value="">טוען ערים...</option></select>
+                    
+                    <label>כתובת:</label>
+                    <input type="text" id="p-address">
+                    
+                    <label>מחיר מבוקש (₪):</label>
+                    <input type="text" id="p-price" class="format-num-admin">
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                        <div><label>חדרים:</label><input type="number" id="p-rooms" step="0.5"></div>
+                        <div><label>קומה:</label><input type="number" id="p-floor"></div>
+                        <div><label>מ''ר:</label><input type="number" id="p-sqm"></div>
+                    </div>
+
+                    <label>מרחק מרכבת (דקות הליכה):</label>
+                    <input type="number" id="p-distTrain" placeholder="למשל: 10">
+
+                    <label>סטטוס נכס:</label>
+                    <select id="p-status">
+                        <option value="ACTIVE">🏠 פעיל</option>
+                        <option value="SOLD">🔴 נמכר!</option>
+                        <option value="BOUGHT">🔵 נקנה!</option>
+                    </select>
+                </div>
+
+                <div class="prop-section">
+                    <div class="finance-card-admin" style="margin-top:0;">
+                        <h4>📊 מדדי איכות חיים (1-5)</h4>
+                        <div class="grid-2">
+                            <div><label>🎓 חינוך:</label><input type="number" id="p-scoreEdu" min="1" max="5" step="0.1"></div>
+                            <div><label>🚆 תחבורה:</label><input type="number" id="p-scoreTrans" min="1" max="5" step="0.1"></div>
+                        </div>
+                        <div class="grid-2" style="margin-top:10px;">
+                            <div><label>☕ פנאי:</label><input type="number" id="p-scoreLeisure" min="1" max="5" step="0.1"></div>
+                            <div><label>🌊 ים:</label><input type="number" id="p-scoreSea" min="1" max="5" step="0.1" placeholder="5"></div>
+                        </div>
+                        <div style="margin-top:15px;">
+                            <label>📍 מרחק מהים (מטרים):</label>
+                            <input type="number" id="p-distSea" placeholder="למשל: 300">
+                        </div>
+                    </div>
+
+                    <label>לינקים לנכס (כל אחד בשורה):</label>
+                    <textarea id="p-link" class="links-textarea" rows="4"></textarea>
+
+                    <label class="featured-wrapper">
+                        <input type="checkbox" id="p-featured">
+                        <span>🌟 נבחר השבוע</span>
+                    </label>
+                </div>
+
+                <div class="prop-section">
+                    <button class="ai-btn" id="run-ai-analysis">
+                        <span class="spinner" id="ai-spinner"></span>
+                        <span id="ai-btn-text">✨ בצעי ניתוח מומחית</span>
+                    </button>
+                    
+                    <label style="margin-top:10px; display:block;">הטיפ של לי (קצר):</label>
+                    <input type="text" id="p-leeTip" placeholder="משפט שימשוך את העין">
+                    
+                    <label>ניתוח Gemini מלא:</label>
+                    <textarea id="p-ai-analysis" rows="6" style="font-size: 13px;"></textarea>
+                </div>
+            </div>
+            
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn-add" id="save-prop-to-db" style="flex:2;">שמרי בבנק הנכסים</button>
+                <button onclick="document.getElementById('prop-modal').style.display='none'" style="flex:1; background:#444; color:white; border:none; border-radius:6px; cursor:pointer;">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="provider-modal" class="modal">
+        <div class="modal-content">
+            <h3>הוספת איש מקצוע לנבחרת</h3>
+            <label>שם המומחה:</label>
+            <input type="text" id="prov-name" placeholder="למשל: אבי כהן">
+            <label>תחום התמחות:</label>
+            <select id="prov-category">
+                <option value="שיפוצים">🛠️ שיפוצים</option>
+                <option value="שמאי">📋 שמאי</option>
+                <option value="עורך דין">⚖️ עורך דין</option>
+                <option value="יועץ משכנתאות">💰 יועץ משכנתאות</option>
+                <option value="אדריכלות ועיצוב">📐 אדריכלות ועיצוב</option>
+                <option value="הובלות">🚚 הובלות</option>
+                <option value="אחר">✨ אחר</option>
+            </select>
+            <label>מספר טלפון:</label>
+            <input type="text" id="prov-phone" placeholder="05x-xxxxxxx">
+            <label>תיאור / המלצה קצרה:</label>
+            <textarea id="prov-desc" placeholder="מה הלקוח צריך לדעת עליו?" rows="3"></textarea>
+            <div style="margin-top:20px;">
+                <button class="btn-add" id="save-provider-btn" style="width:100%;">הוספה לנבחרת המומחים</button>
+                <button onclick="document.getElementById('provider-modal').style.display='none'" style="background:none; color:#888; border:none; margin-top:15px; cursor:pointer; width:100%;">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="client-modal-title">יצירת תיק לקוח חדש</h3>
+            <input type="hidden" id="edit-client-id">
+            
+            <label>שם הלקוח:</label>
+            <input type="text" id="new-client-name-input" placeholder="למשל: ישראל ישראלי">
+            
+            <label>מספר טלפון:</label>
+            <input type="text" id="new-client-phone-input" placeholder="050-0000000">
+
+            <div style="margin-top:20px;">
+                <button class="btn-add" id="confirm-create-client" style="width:100%;">שמירה והמשך 🏠</button>
+                <button onclick="document.getElementById('client-modal').style.display='none'" style="background:none; color:#888; border:none; margin-top:15px; cursor:pointer; width:100%;">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="match-clients-modal" class="modal">
+        <div class="modal-content">
+            <h3>שיוך נכס למספר לקוחות</h3>
+            <p id="match-prop-name" style="color:#FFD700; font-weight:bold;"></p>
+            <input type="text" id="match-client-search" placeholder="חפשי לקוח לפי שם...">
+            <div id="match-clients-list" style="max-height:300px; overflow-y:auto; border:1px solid #333; margin:10px 0; border-radius:8px;"></div>
+            <button class="btn-add" id="confirm-match-action" style="width:100%;">בצעי שיוך לקבוצה נבחרת</button>
+            <button onclick="document.getElementById('match-clients-modal').style.display='none'" style="background:none; color:#888; border:none; margin-top:10px; cursor:pointer; width:100%;">ביטול</button>
+        </div>
+    </div>
+
+    <script type="module" src="admin-dashboard-logic.js"></script>
+</body>
+</html>

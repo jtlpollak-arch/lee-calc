@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פורטל לקוח VIP | לי אטדגי</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #D4AF37; --secondary: #1a1a1a; --bg: #f4f7f9; --safe: #27ae60; --purple: #8e44ad; --accent: #e67e22; --danger: #e74c3c; --warn: #f1c40f; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; direction: rtl; color: #2c3e50; }
+        
+        header { background: #000; padding: 15px 40px; border-bottom: 4px solid var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        
+        /* כפתור שיתוף חוויה חדש */
+        .btn-share-experience {
+            background: var(--primary);
+            color: black;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
+            margin-right: 15px;
+        }
+        .btn-share-experience:hover {
+            transform: scale(1.05);
+            background: #f1c40f;
+        }
+
+        /* עיצוב ציר זמן - Roadmap */
+        .roadmap-container { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #eee; }
+        .roadmap-steps { display: flex; justify-content: space-between; position: relative; padding: 10px 0; }
+        .roadmap-steps::before { content: ""; position: absolute; top: 30px; left: 5%; right: 5%; height: 2px; background: #eee; z-index: 1; }
+        .step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center; }
+        .step-circle { width: 40px; height: 40px; background: white; border: 2px solid #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-bottom: 10px; transition: 0.3s; color: #ccc; }
+        .step-label { font-size: 11px; font-weight: bold; color: #95a5a6; max-width: 80px; }
+        .step.active .step-circle { background: var(--primary); border-color: var(--primary); color: black; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
+        .step.active .step-label { color: var(--secondary); }
+        .step.completed .step-circle { background: var(--secondary); border-color: var(--secondary); color: var(--primary); }
+        .step.completed .step-label { color: #7f8c8d; }
+
+        .tab-nav { background: white; display: flex; justify-content: center; border-bottom: 1px solid #ddd; position: sticky; top: 84px; z-index: 999; }
+        .tab-btn { flex: 1; max-width: 200px; padding: 15px; border: none; background: none; font-weight: bold; color: #7f8c8d; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--secondary); border-bottom-color: var(--primary); background: #fdfaf0; }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .summary-card { background: var(--secondary); color: white; border-radius: 20px; padding: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; transition: 0.5s; border: 2px solid transparent; }
+        .summary-card.negative-balance { background: linear-gradient(135deg, #2c0b0e 0%, #1a1a1a 100%); border-color: var(--danger); }
+        .balance-display { font-size: 48px; font-weight: bold; color: var(--primary); transition: 0.3s; }
+        .balance-display.is-negative { color: var(--danger) !important; text-shadow: 0 0 10px rgba(231,76,60,0.3); }
+        .chart-box { width: 180px; height: 180px; }
+
+        .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .finance-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; transition: 0.3s; }
+        .finance-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .finance-card.purch { border-top: 4px solid var(--primary); }
+        .finance-card:not(.purch) { border-top: 4px solid var(--secondary); }
+
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f8f9fa; }
+        .card-header i { padding: 10px; border-radius: 12px; background: #f8f9fa; color: var(--secondary); }
+        .purch .card-header i { background: #fffdf0; color: var(--primary); }
+
+        .input-wrapper { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .input-wrapper label { font-size: 12px; color: #95a5a6; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+        .finance-input { border: 1.5px solid #edf2f7; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: 600; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        .finance-input:focus { border-color: var(--primary); outline: none; background: #fffdfa; }
+        .finance-input.locked { background: #f8f9fa; cursor: not-allowed; color: #7f8c8d; }
+
+        .total-badge { background: #f8f9fa; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .total-label { font-weight: bold; font-size: 14px; }
+        .total-value { font-size: 20px; font-weight: 800; color: var(--secondary); }
+        .total-value.negative-highlight { color: var(--danger); }
+
+        .search-bar { display: flex; gap: 15px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; }
+        .search-input { flex-grow: 1; border: 1px solid #ddd; padding: 10px; border-radius: 8px; outline: none; }
+        .sort-select { border: 1px solid #ddd; padding: 10px; border-radius: 8px; background: white; }
+        
+        .smart-filters { display: flex; gap: 15px; width: 100%; padding-top: 10px; border-top: 1px solid #f0f0f0; margin-top: 5px; }
+        .filter-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #7f8c8d; font-weight: 600; }
+        .filter-item input { width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 5px; text-align: center; }
+
+        .prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; margin-top: 10px; }
+        .prop-card { background: white; border-radius: 15px; overflow: visible !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; transition: 0.3s; display: flex; align-items: stretch; min-height: 140px; position: relative; }
+        .prop-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .prop-card.is-featured { border: 2px solid var(--primary); background: #fffdf0; }
+        .prop-card.selected-for-calc { border: 2px solid var(--safe); box-shadow: 0 0 15px rgba(39, 174, 96, 0.2); }
+        
+        .archive-section { margin-top: 50px; border-top: 2px solid #ddd; padding-top: 20px; overflow: hidden; }
+        .archive-carousel { width: 100%; overflow: hidden; position: relative; padding: 20px 0; }
+        .archive-track { display: flex; gap: 20px; width: max-content; animation: scrollArchive 30s linear infinite; }
+        .archive-track:hover { animation-play-state: paused; }
+        
+        @keyframes scrollArchive {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(50%); }
+        }
+
+        .archive-track .prop-card { 
+            min-width: 300px; 
+            max-width: 300px; 
+            transform: scale(0.75); 
+            transform-origin: center;
+            filter: grayscale(0.9) opacity(0.7); 
+            transition: 0.3s;
+            position: relative;
+            display: flex;
+            overflow: hidden !important;
+        }
+
+        .archive-track .prop-status-overlay {
+            position: absolute !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            z-index: 20 !important;
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        .archive-track .prop-card:hover { filter: grayscale(0) opacity(1); transform: scale(0.8); }
+        .archive-track .prop-map, .archive-track .lee-tip-box { display: none !important; }
+
+        .featured-ribbon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .featured-ribbon span {
+            position: absolute;
+            display: block;
+            width: 150px;
+            padding: 5px 0;
+            background-color: var(--primary);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+            color: #000;
+            font: 700 10px/1 'Segoe UI', sans-serif;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            text-align: center;
+            right: -35px;
+            top: 20px;
+            transform: rotate(45deg);
+        }
+
+        .selected-badge { position: absolute; top: 10px; left: 10px; background: var(--secondary); color: var(--primary); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: bold; z-index: 5; display: flex; align-items: center; gap: 4px; pointer-events: none; }
+        
+        .budget-badge { position: absolute; top: 10px; left: 135px; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 5px; z-index: 5; pointer-events: none; }
+        .budget-badge.ok { background: #e6fffa; color: #27ae60; border: 1px solid #b2f5ea; }
+        .budget-badge.over { background: #fff5f5; color: #e74c3c; border: 1px solid #feb2b2; }
+
+        .prop-main-info { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
+        .prop-address { font-size: 18px; font-weight: bold; margin-bottom: 5px; margin-top: 18px; }
+        .prop-price { font-size: 21px; font-weight: bold; color: var(--secondary); }
+        .prop-specs { display: flex; gap: 12px; margin-top: 8px; color: #7f8c8d; font-size: 13px; }
+        .spec-item { display: flex; align-items: center; gap: 5px; }
+        
+        .lee-tip-box { margin-top: 10px; padding: 10px; background: #fff9e6; border-right: 3px solid var(--primary); border-radius: 4px; font-size: 13px; font-style: italic; color: #5d4e1f; display: flex; gap: 8px; align-items: flex-start; }
+        
+        .prop-map { width: 100%; height: 120px; border-radius: 8px; margin-top: 12px; border: 1px solid #eee; }
+
+        .match-progress-container { width: 100%; height: 6px; background: #eee; border-radius: 10px; margin-top: 8px; overflow: hidden; }
+        .match-progress-bar { height: 100%; transition: width 0.5s ease; border-radius: 10px; }
+
+        .lifestyle-mini-badges { display: flex; gap: 10px; margin-top: 12px; border-top: 1px dashed #eee; padding-top: 10px; flex-wrap: wrap; }
+        .l-badge { font-size: 10px; display: flex; align-items: center; gap: 4px; color: #666; background: #f0f2f5; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+        
+        .prop-status-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.75); display: flex; align-items: center; justify-content: center; z-index: 15; pointer-events: none; }
+        .status-stamp { border: 4px solid var(--danger); color: var(--danger); font-size: 32px; font-weight: 900; padding: 5px 20px; transform: rotate(-10deg); border-radius: 8px; background: white; }
+        .status-bought { border-color: var(--safe); color: var(--safe); }
+        .disabled-actions { opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
+
+        .action-group { display: flex; flex-direction: column; gap: 8px; padding: 15px; background: #fafafa; border-right: 1px solid #eee; justify-content: center; width: 130px; position: relative; }
+        .icon-btn { background: white; border: 1px solid #ddd; cursor: pointer; color: #95a5a6; transition: 0.2s; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; }
+        .icon-btn:hover { background: #f0f2f5; color: var(--secondary); }
+        .icon-btn.active-fav { color: #e74c3c; border-color: #ffdce0; }
+
+        .btn-quick-action { border: none; border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; justify-content: center; width: 100%; margin-top: 5px; }
+        .btn-select-prop { background: #ebf5ff; color: #007bff; border: 1px solid #b8daff; }
+        .btn-select-prop.active { background: var(--safe); color: white; border-color: var(--safe); }
+        .btn-wa-tour { background: #e6fffa; color: #2c7a7b; border: 1px solid #b2f5ea; }
+
+        .rating-stars { display: flex; gap: 3px; color: #ccc; margin-top: 12px; }
+        .star { cursor: pointer; transition: 0.2s; }
+        .star.filled { color: var(--primary); fill: var(--primary); }
+
+        .links-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            width: 160px;
+            z-index: 99999;
+            padding: 5px 0;
+            direction: rtl;
+        }
+        .links-dropdown.active {
+            display: block !important;
+        }
+        .link-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+            text-align: right;
+        }
+        .link-option:hover {
+            background: #fdfaf0;
+            color: var(--primary);
+        }
+        .link-option i { color: #95a5a6; }
+
+        .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .provider-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; display: flex; flex-direction: column; position: relative; transition: 0.3s; }
+        .provider-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .provider-category { background: #fffdf0; color: var(--primary); font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 10px; width: fit-content; margin-bottom: 15px; border: 1px solid #fdf4d0; }
+        .provider-name { font-size: 20px; font-weight: bold; margin-bottom: 8px; color: var(--secondary); }
+        .provider-desc { font-size: 14px; color: #7f8c8d; line-height: 1.6; font-style: italic; margin-bottom: 20px; flex-grow: 1; }
+        .btn-contact-provider { background: #25d366; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; transition: 0.2s; }
+        .btn-contact-provider:hover { background: #1ebe57; }
+
+        .whatsapp-float { position: fixed; bottom: 30px; left: 30px; background: #25d366; color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.2); text-decoration: none; }
+        
+        .modal-overlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 35px; width: 90%; max-width: 600px; border-radius: 20px; position: relative; max-height: 85vh; overflow-y: auto; }
+        .close-x { position: absolute; left: 20px; top: 20px; cursor: pointer; color: #999; }
+        
+        /* עיצוב אודות משודרג */
+        .about-header { background: var(--secondary); margin: -35px -35px 30px -35px; padding: 40px; border-radius: 20px 20px 0 0; color: white; text-align: center; }
+        .about-profile { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; margin-bottom: 15px; }
+        .about-vision { background: #fdfaf0; border-right: 5px solid var(--primary); padding: 20px; border-radius: 0 10px 10px 0; margin: 20px 0; font-style: italic; }
+        .about-list { list-style: none; padding: 0; text-align: right; }
+        .about-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .about-list i { color: var(--primary); }
+
+        @media (max-width: 900px) { .prop-grid { grid-template-columns: 1fr; } .finance-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center; gap:20px;">
+        <span id="c-name" style="font-weight:bold; font-size:20px;">לקוח</span>
+        <div style="background:#222; padding:6px 18px; border-radius:20px; border:1px solid var(--primary); font-size:14px;">
+            <span id="c-status">...</span>
+        </div>
+        <button onclick="window.shareExperience()" class="btn-share-experience">
+            <i data-lucide="share-2" size="16"></i> המליצו על לי
+        </button>
+    </div>
+    <div onclick="openAbout()" style="cursor: pointer; display: flex; align-items: center; gap: 12px;">
+        <img src="logo.png" alt="Logo" style="height:50px;">
+        <div style="border-right: 1px solid var(--primary); padding-right: 12px;">
+            <span style="color: var(--primary); font-weight: bold; font-size: 14px; line-height: 1;">השיטה של לי</span>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="roadmap-container">
+        <div style="text-align: center; margin-bottom: 15px; font-weight: 800; font-size: 14px; color: var(--secondary);">
+            📍 ציר הזמן של העסקה שלכם
+        </div>
+        <div class="roadmap-steps" id="roadmap-display">
+            <div class="step" data-step="1">
+                <div class="step-circle">1</div>
+                <div class="step-label">חיפוש ואיתור</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-circle">2</div>
+                <div class="step-label">בדיקות ומו"מ</div>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-circle">3</div>
+                <div class="step-label">חתימה ומימון</div>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-circle">4</div>
+                <div class="step-label">מפתח ושיפוץ</div>
+            </div>
+            <div class="step" data-step="5">
+                <div class="step-circle">5</div>
+                <div class="step-label">מזל טוב!</div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('properties')"><i data-lucide="home"></i> <span>נכסים</span></button>
+        <button class="tab-btn" onclick="switchTab('finance')"><i data-lucide="pie-chart"></i> <span>פיננסי</span></button>
+        <button class="tab-btn" onclick="switchTab('providers')"><i data-lucide="users"></i> <span>הנבחרת של לי</span></button>
+        <button class="tab-btn" onclick="switchTab('consult')"><i data-lucide="search"></i> <span>ניתוח חיצוני</span></button>
+    </nav>
+
+    <div id="tab-properties" class="tab-content active">
+        <div class="search-bar">
+            <input type="text" id="prop-search" class="search-input" placeholder="חפשי לפי כתובת..." oninput="filterAndRender()">
+            <select id="sort-order" class="sort-select" onchange="filterAndRender()">
+                <option value="match-desc">התאמה גבוהה (מומלץ)</option>
+                <option value="newest">הכי חדש</option>
+                <option value="price-asc">מחיר: נמוך לגבוה</option>
+                <option value="price-desc">מחיר: גבוה לנמוך</option>
+            </select>
+            <div id="filters-container" style="display:flex; gap:10px;"></div>
+            
+            <div class="smart-filters">
+                <div class="filter-item">
+                    <i data-lucide="bus" size="16"></i> רכבת עד (דקות):
+                    <input type="number" id="filter-max-train" placeholder="הכל" oninput="filterAndRender()">
+                </div>
+                <div class="filter-item">
+                    <i data-lucide="waves" size="16"></i> מרחק ים עד (מטר):
+                    <input type="number" id="filter-max-sea" placeholder="הכל" oninput="filterAndRender()">
+                </div>
+            </div>
+        </div>
+        
+        <div id="p-list" class="prop-grid"></div>
+
+        <div id="archive-section" class="archive-section" style="display:none;">
+            <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="archive" size="20"></i> ארכיון נכסים שנסגרו
+            </h3>
+            <div id="archive-list" class="archive-carousel"></div>
+        </div>
+    </div>
+
+    <div id="tab-finance" class="tab-content">
+        <div id="main-summary-card" class="summary-card">
+            <div>
+                <div style="opacity:0.8; font-size:14px; margin-bottom: 5px;">יתרה נזילה צפויה בסיום:</div>
+                <div id="balance-container" class="balance-display">₪ <span id="final-bal">0</span></div>
+                <div id="balance-warning" style="display:none; font-size: 13px; color: var(--danger); margin-top: 10px; font-weight: bold;">
+                    <i data-lucide="alert-octagon" size="16"></i> שימו לב: חריגה מהתקציב המתוכנן
+                </div>
+            </div>
+            <div class="chart-box"><canvas id="mainChart"></canvas></div>
+        </div>
+
+        <div class="finance-grid">
+            <div class="finance-card">
+                <div class="card-header"><i data-lucide="trending-up"></i><h3 style="margin:0;">עסקת המכירה</h3></div>
+                <div class="input-wrapper"><label>מחיר מכירה צפוי</label><input type="text" id="in-salePrice" class="finance-input u-input"></div>
+                <div class="input-wrapper"><label id="label-brS">דמי תיווך מכירה (+מע"מ)</label><input type="text" id="out-brS" class="finance-input locked" readonly></div>
+                <div class="input-wrapper"><label id="label-lwS">שכר טרחת עו"ד (+מע"מ)</label><input type="text" id="out-lwS" class="finance-input locked" readonly></div>
+                <div class="input-wrapper"><label>משכנתא לפרעון</label><input type="text" id="in-mortgageBalance" class="finance-input u-input"></div>
+                <div class="input-wrapper"><label>היטל השבחה / מס שבח</label><input type="text" id="in-bettermentTax" class="finance-input u-input"></div>
+                <div class="total-badge"><span class="total-label">סה"כ הוצאות מכירה:</span><span id="total-sale-costs" class="total-value" style="color:var(--danger)">₪0</span></div>
+            </div>
+            <div class="finance-card purch">
+                <div class="card-header"><i data-lucide="shopping-bag"></i><h3 style="margin:0;">הקנייה והשיפוץ</h3></div>
+                <div class="input-wrapper"><label>מחיר רכישת מטרה</label><input type="text" id="in-purchasePrice" class="finance-input u-input"></div>
+                <div class="input-wrapper"><label id="label-brP">דמי תיווך קנייה (+מע"מ)</label><input type="text" id="out-brP" class="finance-input locked" readonly></div>
+                <div class="input-wrapper"><label id="label-lwP">שכר טרחת עו"ד (+מע"מ)</label><input type="text" id="out-lwP" class="finance-input locked" readonly></div>
+                <div class="input-wrapper"><label>מס רכישה חזוי</label><input type="text" id="in-purchaseTax" class="finance-input u-input"></div>
+                <div class="input-wrapper"><label>תקציב שיפוץ וריהוט</label><input type="text" id="in-renovationBudget" class="finance-input u-input"></div>
+                <div class="total-badge"><span class="total-label">עלות רכישה כוללת:</span><span id="total-purch-costs" class="total-value" style="color:var(--primary)">₪0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-providers" class="tab-content">
+        <h2 style="margin-bottom: 30px; border-right: 4px solid var(--primary); padding-right: 15px;">הנבחרת של לי – אנשי המקצוע שתוכלו לסמוך עליהם</h2>
+        <div id="providers-list" class="provider-grid"></div>
+    </div>
+
+    <div id="tab-consult" class="tab-content">
+        <div class="finance-card" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <i data-lucide="search" size="48" style="color: var(--primary); margin-bottom: 20px;"></i>
+            <h3>ניתוח נכס חיצוני</h3>
+            <p style="max-width: 500px; color: #7f8c8d;">הדביקו לינק לאתר ולי תבחן את הנכס</p>
+            <div style="width: 100%; max-width: 600px; margin-top: 30px;">
+                <input type="text" id="external-link-input" class="finance-input" placeholder="הדביקי לינק לנכס כאן..." style="margin-bottom: 15px;">
+                <button onclick="window.analyzeExternal()" class="btn-quick-action" style="background: var(--secondary); color: white; padding: 15px; font-size: 16px;">נתח נכס</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="about-modal" class="modal-overlay" style="display: flex; align-items: center; justify-content: center;">
+    <div class="modal-content" style="padding: 0; overflow: hidden; width: 92%; max-width: 420px; border-radius: 20px; background: white; position: relative; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        
+        <span class="close-x" onclick="closeAbout()" style="position: absolute; top: 15px; right: 15px; z-index: 100; color: white; cursor: pointer; background: rgba(0,0,0,0.4); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </span>
+
+        <div class="about-header" style="background: #000; padding: 50px 20px 25px 20px; text-align: center; color: white;">
+            <div style="width: 110px; height: 110px; margin: 0 auto 15px auto; border: 3px solid #FFD700; border-radius: 50%; overflow: hidden; background: #222; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);">
+                <img src="li-profile.jpg" alt="לי אטדגי" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <h2 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;">לי אטדגי</h2>
+            <div style="color: #FFD700; font-weight: 600; font-size: 15px; margin-top: 6px; letter-spacing: 0.3px;">אסטרטגיה וליווי עסקאות נדל"ן</div>
+        </div>
+
+        <div style="padding: 20px 25px 25px 25px; box-sizing: border-box;">
+            
+            <div style="text-align: center; margin-bottom: 18px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px;">
+                <h2 style="font-size: 19px; font-weight: 800; color: #000; margin: 0; line-height: 1.3;">
+                    כשמוכרים <span style="color: #D4AF37;">מהגובה הנכון</span>,
+                    <br>
+                    רואים רחוק יותר. <span style="background: #000; color: #FFD700; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">משיגים יותר.</span>
+                </h2>
+            </div>
+
+            <div style="margin-bottom: 18px; text-align: center; font-size: 14px; line-height: 1.5; color: #444; background: #fdfdfd; padding: 10px; border-radius: 8px; border-right: 4px solid #D4AF37; font-style: italic;">
+                "נדל"ן עבורי הוא לא רק קירות ומספרים, הוא הבית שלכם והביטחון הכלכלי שלכם."
+            </div>
+
+            <h3 style="font-size: 15px; margin: 0 0 10px 0; color: #222; font-weight: 700;">למה לעבוד איתי?</h3>
+            <ul style="list-style: none; padding: 0; margin: 0 0 22px 0;">
+                <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; color: #333;">
+                    <i data-lucide="check-circle-2" style="width: 16px; color: #D4AF37;"></i> ליווי אישי מאסטרטגיה ועד מפתח
+                </li>
+                <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; color: #333;">
+                    <i data-lucide="check-circle-2" style="width: 16px; color: #D4AF37;"></i> ניתוח שוק מבוסס AI ונתוני אמת
+                </li>
+                <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; color: #333;">
+                    <i data-lucide="check-circle-2" style="width: 16px; color: #D4AF37;"></i> מעטפת של נבחרת מומחים מובילה
+                </li>
+            </ul>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <a href="tel:0533386345" style="background: #FFD700; color: #000; padding: 12px; border-radius: 12px; text-decoration: none; font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);">
+                    <i data-lucide="phone" style="width: 18px;"></i> התקשרו
+                </a>
+                <a href="https://wa.me/972533386345" target="_blank" style="background: #25d366; color: white; padding: 12px; border-radius: 12px; text-decoration: none; font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);">
+                    <i data-lucide="message-circle" style="width: 18px;"></i> WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ai-modal" class="modal-overlay">
+    <div class="modal-content"><span class="close-x" onclick="closeAi()"><i data-lucide="x"></i></span><h2 style="color:var(--purple);"><i data-lucide="sparkles"></i> תיאור ואפיון (ניתוח)</h2><div id="ai-body" style="white-space:pre-wrap; line-height:1.7;"></div></div>
+</div>
+
+<a href="https://wa.me/972533386345" class="whatsapp-float"><i data-lucide="phone" size="32"></i></a>
+
+<script type="module">
+    import { db } from './firebase-config.js';
+    import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { FinanceLogic } from './shared.js';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientID = urlParams.get('id');
+    let chart, bankProperties = [], currentProjectData = null;
+    let currentCityFilter = 'הכל';
+
+    window.switchTab = (tab) => {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            if(btn.onclick.toString().includes(tab)) btn.classList.add('active');
+        });
+        lucide.createIcons();
+    };
+
+    // פונקציית שיתוף חוויה חדשה
+    window.shareExperience = () => {
+		if (!currentProjectData) return;
+		
+		// הלינק החדש שמוביל לקטלוג הנכסים החיים
+		const catalogUrl = `${window.location.origin}/catalog.html`;
+		
+		const message = `היי, אני חייבת לשתף אותך - אני עובדת עכשיו עם לי אטדגי על העסקה שלי והיא משתמשת במערכת טכנולוגית מדהימה שנותנת לי שקט נפשי ונתונים בזמן אמת. כדאי לך לראות את רמת ניתוח הנכסים שלה כאן: ${catalogUrl}`;
+		
+		const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+		window.open(waUrl, '_blank');
+	};
+
+    function initChart() {
+        const canvas = document.getElementById('mainChart');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'doughnut', data: { labels: ['יתרה', 'הוצאות'], datasets: [{ data: [1,1], backgroundColor: ['#D4AF37','#e74c3c'], borderWidth: 0 }] },
+            options: { cutout: '80%', plugins: { legend: { display: false } }, maintainAspectRatio: false }
+        });
+    }
+
+    function startBankSync() {
+        onSnapshot(collection(db, "property_bank"), (snap) => {
+            bankProperties = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (currentProjectData) filterAndRender();
+        }, (e) => console.error("Error syncing bank:", e));
+    }
+
+    function startProvidersSync() {
+        onSnapshot(collection(db, "service_providers"), (snap) => {
+            const list = document.getElementById('providers-list');
+            if (!list) return;
+            const providers = snap.docs.map(d => d.data());
+            
+            if (providers.length === 0) {
+                list.innerHTML = `<p style="color: #7f8c8d; grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 20px;">נבחרת המומחים מתעדכנת ברגעים אלו...</p>`;
+                return;
+            }
+
+            list.innerHTML = providers.map(p => {
+                const cleanPhone = p.phone.replace(/[^0-9]/g, '');
+                const waNumber = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+                const message = encodeURIComponent(`היי ${p.name}, הגעתי אליך דרך הפורטל של לי אטדגי, אשמח להתייעץ איתך.`);
+                
+                return `
+                <div class="provider-card">
+                    <div class="provider-category">${p.category}</div>
+                    <div class="provider-name">${p.name}</div>
+                    <div class="provider-desc">${p.description || 'מומלץ בחום על ידי לי כחלק מהמעטפת המקצועית של הפרויקט.'}</div>
+                    <a href="https://wa.me/${waNumber}?text=${message}" target="_blank" class="btn-contact-provider">
+                        <i data-lucide="message-circle" size="20"></i> פתיחת שיחת WhatsApp
+                    </a>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        });
+    }
+
+    function updateRoadmap(currentStep) {
+        const steps = document.querySelectorAll('.step');
+        steps.forEach(s => {
+            const stepNum = parseInt(s.dataset.step);
+            s.classList.remove('active', 'completed');
+            if (stepNum < currentStep) s.classList.add('completed');
+            if (stepNum === currentStep) s.classList.add('active');
+        });
+    }
+
+    function calculatePropMatch(p, c) {
+        if (!c) return 0;
+        let weightedScore = 0;
+        let totalWeight = 0;
+        
+        const metrics = [
+            { propKey: 'scoreEdu', prefKey: 'prefEdu' },
+            { propKey: 'scoreTrans', prefKey: 'prefTrans' },
+            { propKey: 'scoreLeisure', prefKey: 'prefLeisure' },
+            { propKey: 'scoreSea', prefKey: 'prefSea' }
+        ];
+
+        metrics.forEach(m => {
+            const importance = c[m.prefKey] || 3;
+            const score = p[m.propKey] || 0;
+            weightedScore += (score * importance);
+            totalWeight += (importance * 5);
+        });
+
+        let percent = Math.round((weightedScore / totalWeight) * 100);
+        if (c.limitHighFloor && p.floor > 4) percent = Math.max(0, percent - 50);
+        return percent;
+    }
+
+    window.filterAndRender = () => {
+        if (!currentProjectData) return;
+        const searchTerm = document.getElementById('prop-search').value.toLowerCase();
+        const sortOrder = document.getElementById('sort-order').value;
+        const maxTrain = parseInt(document.getElementById('filter-max-train').value) || Infinity;
+        const maxSea = parseInt(document.getElementById('filter-max-sea').value) || Infinity;
+        
+        let props = (currentProjectData.properties || []).map(p => {
+            const bankMatch = bankProperties.find(bp => bp.address === p.address);
+            const combined = bankMatch ? { ...p, ...bankMatch } : { ...p, status: 'ACTIVE' };
+            return { ...combined, matchPercent: calculatePropMatch(combined, currentProjectData) };
+        });
+
+        let filtered = props.filter(p => {
+            const matchesSearch = p.address.toLowerCase().includes(searchTerm);
+            const matchesCity = (currentCityFilter === 'הכל' || (p.city || 'כללי') === currentCityFilter);
+            const matchesTrain = (p.distTrain || 0) <= maxTrain;
+            const matchesSea = (p.distSea || 0) <= maxSea;
+            return matchesSearch && matchesCity && matchesTrain && matchesSea;
+        });
+        
+        if(sortOrder === 'match-desc') filtered.sort((a,b) => b.matchPercent - a.matchPercent);
+        if(sortOrder === 'price-asc') filtered.sort((a,b) => a.price - b.price);
+        if(sortOrder === 'price-desc') filtered.sort((a,b) => b.price - a.price);
+        if(sortOrder === 'newest') filtered.reverse();
+
+        filtered.sort((a, b) => {
+            if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
+            if (a.status !== 'ACTIVE' && b.status === 'ACTIVE') return 1;
+            return 0;
+        });
+
+        renderPropsGrid(filtered);
+    };
+
+    window.selectPropForCalc = async (price, address) => {
+        if(!clientID) return;
+        await updateDoc(doc(db, "projects", clientID), { purchasePrice: price });
+        alert(`נבחר: ${address}`);
+    };
+
+    window.updateRating = async (address, rating) => {
+        if(!clientID) return;
+        const newRatings = { ...(currentProjectData.ratings || {}) };
+        newRatings[address] = rating;
+        await updateDoc(doc(db, "projects", clientID), { ratings: newRatings });
+    };
+
+    function getSiteName(url) {
+        if (!url) return 'קישור';
+        if (url.includes('yad2.co.il')) return 'יד 2';
+        if (url.includes('madlan.co.il')) return 'מדלן';
+        if (url.includes('facebook.com')) return 'פייסבוק';
+        if (url.includes('homeless.co.il')) return 'הומלס';
+        return 'קישור לנכס';
+    }
+
+    function renderPropsGrid(props) {
+        const list = document.getElementById('p-list');
+        const archiveList = document.getElementById('archive-list');
+        const archiveSection = document.getElementById('archive-section');
+        if(!list) return;
+        
+        const favs = currentProjectData.favorites || [];
+        const ratings = currentProjectData.ratings || {};
+        const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
+        const adminSettings = {
+            lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
+            lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
+            brokerageRateSale: currentProjectData.brokerageRateSale || 2,
+            brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
+        };
+
+        const activeProps = props.filter(p => p.status === 'ACTIVE');
+        const archivedProps = props.filter(p => p.status === 'SOLD' || p.status === 'BOUGHT');
+
+        const mapFunction = (p, idx) => {
+            const isInactive = p.status !== 'ACTIVE';
+            const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
+            const currentRating = ratings[p.address] || 0;
+            const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
+            const isOk = sim.finalBalance >= 0;
+            const matchScore = p.matchPercent || 0;
+            const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
+
+            let stars = '';
+            for(let i=1; i<=5; i++) stars += `<i data-lucide="star" size="18" class="star ${i <= currentRating ? 'filled' : ''}" onclick="window.updateRating('${p.address}', ${i})"></i>`;
+            
+            let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
+            let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
+            const links = p.links || (p.link ? [p.link] : []);
+            let linkUI = '';
+            
+            if (links.length === 1) {
+                linkUI = `<a href="${links[0]}" target="_blank" class="icon-btn"><i data-lucide="external-link" size="18"></i></a>`;
+            } else if (links.length > 1) {
+                const dropdownItems = links.map((l, i) => `
+                    <a href="${l}" target="_blank" class="link-option">
+                        <i data-lucide="link" size="14"></i>
+                        <span>${getSiteName(l)}</span>
+                    </a>
+                `).join('');
+                linkUI = `<div style="position:relative;"><button class="icon-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('active')"><i data-lucide="external-link" size="18"></i></button><div class="links-dropdown">${dropdownItems}</div></div>`;
+            }
+
+            const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
+            const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
+
+            return `
+            <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
+                ${featuredRibbon}${statusOverlay}
+                <div class="budget-badge ${isOk ? 'ok' : 'over'}">
+                    <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
+                </div>
+                ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
+                <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
+                    <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                         <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
+                         <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
+                    </div>
+                    <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
+                    <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
+                    <div class="prop-specs">
+                        <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
+                        <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
+                        <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
+                    </div>
+                    ${simpleMap}
+                    <div class="lifestyle-mini-badges">
+                        <div class="l-badge" title="חינוך"><i data-lucide="graduation-cap" size="12"></i> ${p.scoreEdu || '?'}/5</div>
+                        <div class="l-badge" title="תחבורה"><i data-lucide="bus" size="12"></i> ${p.scoreTrans || '?'}/5</div>
+                        <div class="l-badge" title="פנאי"><i data-lucide="coffee" size="12"></i> ${p.scoreLeisure || '?'}/5</div>
+                        <div class="l-badge" title="ים"><i data-lucide="waves" size="12"></i> ${p.scoreSea || '?'}/5</div>
+                    </div>
+                    ${p.leeTip ? `<div class="lee-tip-box"><span>${p.leeTip}</span></div>` : ''}
+                    <div class="rating-stars">${stars}</div>
+                </div>
+                <div class="action-group ${isInactive ? 'disabled-actions' : ''}">
+                    <div style="display:flex; gap:8px; justify-content: center; margin-bottom: 5px;">
+                        <button class="icon-btn" onclick="window.openAi('${b64EncodeUnicode(p.aiAnalysis || "")}')"><i data-lucide="sparkles" size="18"></i></button>
+                        ${linkUI}
+                        <button class="icon-btn ${favs.includes(p.address) ? 'active-fav' : ''}" onclick="window.tFav('${p.address}', ${favs.includes(p.address)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.address) ? '#e74c3c' : 'none'}"></i></button>
+                    </div>
+                    <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">בחר</button>
+                    <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
+                </div>
+            </div>`;
+        };
+
+        list.innerHTML = activeProps.map((p, i) => mapFunction(p, i)).join('');
+        if (archiveList) {
+            const archiveContent = archivedProps.map((p, i) => mapFunction(p, i + 1000)).join('');
+            archiveList.innerHTML = `<div class="archive-track">${archiveContent}${archiveContent}${archiveContent}</div>`;
+            archiveSection.style.display = archivedProps.length > 0 ? 'block' : 'none';
+        }
+        lucide.createIcons();
+    }
+
+    function b64EncodeUnicode(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+    }
+
+    if (clientID) {
+        initChart();
+        startBankSync();
+        startProvidersSync();
+
+        onSnapshot(doc(db, "projects", clientID), (snap) => {
+            if (!snap.exists()) return;
+            currentProjectData = snap.data();
+            
+            // עדכון ה-Roadmap
+            const currentRoadmapStep = parseInt(currentProjectData.roadmapStep) || 1;
+            updateRoadmap(currentRoadmapStep);
+
+            const settings = {
+                lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
+                lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
+                brokerageRateSale: currentProjectData.brokerageRateSale || 2,
+                brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
+            };
+
+            const res = FinanceLogic.calculateAll({...currentProjectData, ...settings});
+            document.getElementById('c-name').innerText = currentProjectData.clientName;
+            document.getElementById('c-status').innerText = FinanceLogic.STATUSES[currentProjectData.status] || currentProjectData.status;
+            document.getElementById('final-bal').innerText = res.finalBalance.toLocaleString();
+            
+            const card = document.getElementById('main-summary-card');
+            const warn = document.getElementById('balance-warning');
+            if (res.finalBalance < 0) { card.classList.add('negative-balance'); warn.style.display = 'block'; }
+            else { card.classList.remove('negative-balance'); warn.style.display = 'none'; }
+
+            document.getElementById('out-brS').value = FinanceLogic.formatNumber(res.brokerageFeeSale);
+            document.getElementById('out-lwS').value = FinanceLogic.formatNumber(res.lawyerFeeSale);
+            document.getElementById('out-brP').value = FinanceLogic.formatNumber(res.brokerageFeePurch);
+            document.getElementById('out-lwP').value = FinanceLogic.formatNumber(res.lawyerFeePurch);
+            document.getElementById('total-sale-costs').innerText = "₪" + res.totalSaleCosts.toLocaleString();
+            document.getElementById('total-purch-costs').innerText = "₪" + res.totalPurchCosts.toLocaleString();
+            
+            if(chart) {
+                chart.data.datasets[0].data = [Math.max(0, res.finalBalance), res.totalProjectCost || 1];
+                chart.update();
+            }
+
+            ['salePrice','mortgageBalance','bettermentTax','purchasePrice','purchaseTax','renovationBudget'].forEach(f => {
+                const el = document.getElementById('in-' + f);
+                if (el && document.activeElement !== el) el.value = FinanceLogic.formatNumber(currentProjectData[f]);
+            });
+            updateCityFilters(currentProjectData.properties || []);
+            filterAndRender();
+        });
+    }
+
+    function updateCityFilters(props) {
+        const container = document.getElementById('filters-container');
+        if(!container) return;
+        const cities = [...new Set(props.map(p => p.city || 'כללי'))];
+        container.innerHTML = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>` + cities.map(c => `<button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">${c}</button>`).join('');
+    }
+    window.setFilter = (city) => { currentCityFilter = city; filterAndRender(); };
+    window.tFav = async (addr, isFav) => {
+        if(!clientID) return;
+        const ref = doc(db, "projects", clientID);
+        await updateDoc(ref, { favorites: isFav ? arrayRemove(addr) : arrayUnion(addr) });
+    };
+    window.openAbout = () => document.getElementById('about-modal').style.display = 'flex';
+    window.closeAbout = () => document.getElementById('about-modal').style.display = 'none';
+    window.openAi = (b64) => { document.getElementById('ai-body').innerText = decodeURIComponent(escape(atob(b64))); document.getElementById('ai-modal').style.display = 'flex'; };
+    window.closeAi = () => document.getElementById('ai-modal').style.display = 'none';
+    window.requestTourWA = (a) => window.open(`https://wa.me/972533386345?text=${encodeURIComponent(`לי, שלום! ראיתי בפורטל האישי את הנכס ב${a} ואשמח מאוד לתאם בו סיור. תודה רבה!`)}`, '_blank');
+
+    window.analyzeExternal = async () => {
+        const link = document.getElementById('external-link-input').value;
+        if (!link) { alert("בבקשה תדביקי לינק קודם"); return; }
+        try {
+            await addDoc(collection(db, "consultation_requests"), { clientName: currentProjectData.clientName || "לקוח לא ידוע", url: link, timestamp: new Date().toISOString() });
+            const message = `לי, שלום! מצאתי נכס חיצוני ב${link} שמעניין אותי, אשמח לניתוח שלך.`;
+            window.open(`https://wa.me/972533386345?text=${encodeURIComponent(message)}`, '_blank');
+            alert("הבקשה נשלחה בהצלחה!");
+            document.getElementById('external-link-input').value = ""; 
+        } catch (e) { alert("חלה שגיאה בשליחת הבקשה."); }
+    };
+
+    document.querySelectorAll('.u-input').forEach(i => {
+        i.oninput = (e) => e.target.value = FinanceLogic.formatNumber(e.target.value.replace(/[^0-9]/g, ''));
+        i.onblur = async (e) => {
+            if(!clientID) return;
+            await updateDoc(doc(db, "projects", clientID), { [e.target.id.replace('in-', '')]: FinanceLogic.cleanNumber(e.target.value) });
+        };
+    });
+
+    lucide.createIcons();
+</script>
+</body>
+</html>
