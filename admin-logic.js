@@ -8,6 +8,7 @@ const clientID = urlParams.get('id');
 let currentProperties = [];
 let allBankProperties = []; 
 let selectedIDs = []; // המשתנה החדש לניהול הבחירה המרובה
+let currentRatings = {};
 
 window.hasUnsavedChanges = false;
 
@@ -152,7 +153,8 @@ async function init() {
 
             // נכסים ומועדפים
             currentProperties = d.properties || [];
-            window.currentFavorites = d.favorites || []; 
+            window.currentFavorites = d.favorites || [];
+            currentRatings = d.ratings || {}; 
             
             // עכשיו renderAssigned ימצא את המידע ב-allBankProperties הטעון
             renderAssigned();
@@ -212,6 +214,7 @@ document.getElementById('btn-save-all').onclick = async () => {
         
         properties: currentProperties,
         favorites: window.currentFavorites, 
+        ratings: currentRatings,
         lastUpdated: new Date().toISOString()
     };
 
@@ -278,12 +281,34 @@ function renderAssigned() {
 }
 
 window.remP = (i) => { 
-    const removedProp = currentProperties[i];
-    if (confirm(`האם להסיר את הנכס ב-${removedProp.address} מהפורטל של הלקוח?`)) {
+    if (!currentProperties[i]) return;
+
+    // 1. שמירת הכתובת של הנכס להסרה
+    const addrToRemove = currentProperties[i].address;
+
+    if (confirm(`האם להסיר את ${addrToRemove} מהתיק? (זה ינקה גם מועדפים ודירוגים)`)) {
+        
+        // א. הסרה מרשימת הנכסים המשויכים
         currentProperties.splice(i, 1); 
+
+        // ב. ניקוי מהמועדפים (Favorites)
         if (window.currentFavorites) {
-            window.currentFavorites = window.currentFavorites.filter(addr => addr.trim() !== removedProp.address.trim());
+            window.currentFavorites = window.currentFavorites.filter(f => 
+                f && f.trim() !== addrToRemove.trim()
+            );
         }
+
+        // ג. ניקוי מהדירוגים (Ratings) - עכשיו זה יעבוד כי הוספנו את המשתנה
+        if (currentRatings) {
+            // אנחנו בודקים אם קיימת כתובת כזו במפתחות של האובייקט ומוחקים
+            Object.keys(currentRatings).forEach(key => {
+                if (key.trim() === addrToRemove.trim()) {
+                    delete currentRatings[key];
+                }
+            });
+        }
+
+        // ד. רענון התצוגה וסימון לשינוי
         renderAssigned(); 
         markChanged();
     }
