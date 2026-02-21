@@ -797,7 +797,16 @@
                 const el = document.getElementById('in-' + f);
                 if (el && document.activeElement !== el) el.value = FinanceLogic.formatNumber(currentProjectData[f]);
             });
-            updateCityFilters(currentProjectData.properties || []);
+            // צרי רשימה מעודכנת של נכסים עם השמות הנכונים מהבנק
+            const updatedPropsForFilter = (currentProjectData.properties || []).map(p => {
+                const bankMatch = bankProperties.find(bp => 
+                    (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
+                );
+                return bankMatch ? { ...p, city: bankMatch.city } : p;
+            });
+
+            // עכשיו עדכני את הפילטרים עם הרשימה שכוללת את "דימונה"
+            updateCityFilters(updatedPropsForFilter);
             filterAndRender();
         });
     }
@@ -805,10 +814,38 @@
     function updateCityFilters(props) {
         const container = document.getElementById('filters-container');
         if(!container) return;
+        
+        // חילוץ ערים ייחודיות מתוך הנכסים המעודכנים
         const cities = [...new Set(props.map(p => p.city || 'כללי'))];
-        container.innerHTML = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>` + cities.map(c => `<button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">${c}</button>`).join('');
+        
+        // יצירת כפתור "הכל"
+        let html = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" 
+                    onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>`;
+        
+        // יצירת כפתור לכל עיר - כאן ההשוואה הקריטית
+        html += cities.map(c => `
+            <button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" 
+                    onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">
+                ${c}
+            </button>
+        `).join('');
+        
+        container.innerHTML = html;
     }
-    window.setFilter = (city) => { currentCityFilter = city; filterAndRender(); };
+    window.setFilter = (city) => { 
+        currentCityFilter = city; 
+        
+        // כאן התיקון: אנחנו בונים רשימה מעודכנת ושולחים אותה שוב לפונקציה של הכפתורים
+        const updatedProps = (currentProjectData.properties || []).map(p => {
+            const bankMatch = bankProperties.find(bp => 
+                (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
+            );
+            return bankMatch ? { ...p, city: bankMatch.city } : p;
+        });
+
+        updateCityFilters(updatedProps); // זה מה שצובע את הכפתור בזהב/שחור
+        filterAndRender(); // זה מה שמסנן את הכרטיסיות למטה
+    };
     window.tFav = async (addr, isFav) => {
         if(!clientID) return;
         const ref = doc(db, "projects", clientID);
