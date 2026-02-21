@@ -588,8 +588,14 @@
         const maxSea = parseInt(document.getElementById('filter-max-sea').value) || Infinity;
         
         let props = (currentProjectData.properties || []).map(p => {
-            const bankMatch = bankProperties.find(bp => bp.address === p.address);
-            const combined = bankMatch ? { ...p, ...bankMatch } : { ...p, status: 'ACTIVE' };
+            const bankMatch = bankProperties.find(bp => 
+                (p.propertyId && bp.id === p.propertyId) || 
+                (p.id && bp.id === p.id) || 
+                (bp.address === p.address)
+            );
+            const combined = bankMatch ? 
+                { ...p, ...bankMatch, address: bankMatch.address } : 
+                { ...p, status: 'ACTIVE' };
             return { ...combined, matchPercent: calculatePropMatch(combined, currentProjectData) };
         });
 

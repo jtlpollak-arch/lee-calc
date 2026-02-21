@@ -502,17 +502,63 @@ onSnapshot(collection(db, "projects"), (snap) => {
 
                 const roadmapText = ROADMAP_STEPS[d.roadmapStep] || "טרם נקבע";
 
-                const propsList = (d.properties || []).map(p => `
-                    <span class="prop-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${p.address}')">${p.address}</span>
-                `).join('');
+                const propsList = (d.properties || []).map(p => {
+                    // 1. מחפשים את הנכס בבנק לפי ID (הכי בטוח) או לפי כתובת (כגיבוי)
+                    const liveProp = allBankProps.find(bp => 
+                        (p.propertyId && bp.id === p.propertyId) || 
+                        (p.id && bp.id === p.id) || 
+                        (bp.data.address === p.address)
+                    );
+                    
+                    // 2. אם מצאנו בבנק, ניקח את הכתובת המעודכנת. אם לא - נשתמש במה שיש בתיק.
+                    const currentAddr = liveProp ? liveProp.data.address : p.address;
+                    
+                    // 3. מחזירים את ה-HTML עם הכתובת המעודכנת
+                    return `
+                        <span class="prop-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${currentAddr}')">
+                            ${currentAddr}
+                        </span>
+                    `;
+                }).join('');
 
-                const favsList = (d.favorites || []).map(f => `
-                    <span class="fav-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${f}')">${f}</span>
-                `).join('');
+                const favsList = (d.favorites || []).map(f => {
+                    // 1. מחפשים בנכסים המשויכים של הלקוח נכס שהכתובת שלו (הישנה) תואמת למועדף
+                    const associatedProp = (d.properties || []).find(p => p.address === f);
+                    const pId = associatedProp ? (associatedProp.propertyId || associatedProp.id) : null;
+
+                    // 2. עכשיו מחפשים בבנק לפי ה-ID שמצאנו, או לפי הכתובת כגיבוי
+                    const liveProp = allBankProps.find(bp => 
+                        (pId && bp.id === pId) || (bp.data.address === f)
+                    );
+
+                    // 3. לוקחים את הכתובת המעודכנת מהבנק
+                    const currentAddr = liveProp ? liveProp.data.address : f;
+
+                    return `
+                        <span class="fav-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${currentAddr}')">
+                            ${currentAddr}
+                        </span>
+                    `;
+                }).join('');
                 
                 const ratingsObj = d.ratings || {};
                 const ratingsList = Object.entries(ratingsObj).map(([addr, stars]) => {
-                    return `<span class="rating-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${addr}')">${addr} (${stars}⭐)</span>`;
+                    // 1. מחפשים בנכסים המשויכים את ה-ID לפי הכתובת שדורגה
+                    const associatedProp = (d.properties || []).find(p => p.address === addr);
+                    const pId = associatedProp ? (associatedProp.propertyId || associatedProp.id) : null;
+
+                    // 2. מחפשים בבנק את המידע החי לפי ה-ID
+                    const liveProp = allBankProps.find(bp => 
+                        (pId && bp.id === pId) || (bp.data.address === addr)
+                    );
+
+                    const currentAddr = liveProp ? liveProp.data.address : addr;
+
+                    return `
+                        <span class="rating-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${currentAddr}')">
+                            ${currentAddr} (${stars}⭐)
+                        </span>
+                    `;
                 }).join('');
                 
                 const clientPortalUrl = `${window.location.origin}/client.html?id=${d.id}`;
@@ -620,6 +666,8 @@ onSnapshot(collection(db, "property_bank"), (snap) => {
     allBankProps = [];
     snap.forEach(s => allBankProps.push({ id: s.id, data: s.data() }));
     renderBank();
+
+    document.dispatchEvent(new Event('refreshClients'));
 });
 
 document.getElementById('bank-city-filter').onchange = renderBank;

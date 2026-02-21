@@ -355,8 +355,13 @@ if (confirmBtn) {
         selectedIDs.forEach(id => {
             const propData = allBankProperties.find(p => p.id === id);
             if (propData) {
-                const { id: _, ...cleanProp } = propData;
-                currentProperties.push(cleanProp);
+                // במקום למחוק את ה-ID, אנחנו שומרים את כל הנתונים 
+                // ומוסיפים להם שדה שנקרא propertyId כדי שנוכל לזהות את הנכס תמיד
+                const propWithId = { 
+                    ...propData, 
+                    propertyId: id 
+                };
+                currentProperties.push(propWithId);
             }
         });
 
