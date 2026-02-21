@@ -79,6 +79,14 @@ async function init() {
     }
 
     try {
+        // --- עדכון: טעינת בנק הנכסים לפני הכל כדי שרנדר הנכסים יזהה שינויי כתובת ---
+        const bankSnap = await getDocs(collection(db, "property_bank"));
+        allBankProperties = [];
+        bankSnap.forEach(s => {
+            allBankProperties.push({ id: s.id, ...s.data() });
+        });
+        // ------------------------------------------------------------------
+
         const snap = await getDoc(doc(db, "projects", clientID));
         if (snap.exists()) {
             const d = snap.data();
@@ -146,6 +154,7 @@ async function init() {
             currentProperties = d.properties || [];
             window.currentFavorites = d.favorites || []; 
             
+            // עכשיו renderAssigned ימצא את המידע ב-allBankProperties הטעון
             renderAssigned();
 
             // הוספת האזנה לשינויים לכל השדות (לצורך דגל השמירה)
@@ -238,15 +247,25 @@ function renderAssigned() {
     }
 
     container.innerHTML = currentProperties.map((p, i) => {
-        const isFav = window.currentFavorites && window.currentFavorites.some(addr => addr.trim() === p.address.trim());
+        // 1. מחפשים את הנכס בבנק לפי ID (propertyId) או כתובת
+        const liveProp = allBankProperties.find(bp => 
+            (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
+        );
+
+        // 2. משתמשים במידע המעודכן מהבנק אם הוא קיים
+        const currentAddr = liveProp ? liveProp.address : p.address;
+        const currentPrice = liveProp ? liveProp.price : p.price;
+        const currentCity = liveProp ? liveProp.city : (p.city || 'כללי');
+
+        const isFav = window.currentFavorites && window.currentFavorites.some(addr => addr.trim() === currentAddr.trim());
         const favTag = isFav ? `<div class="fav-indicator" style="color:#e74c3c; font-size:12px; font-weight:bold;">❤️ אהבו את הנכס</div>` : '';
 
         return `
         <div class="assigned-prop" style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #2c3e50;">
             <div style="flex-grow:1;">
-                <div style="font-weight:bold;">${p.address}</div>
+                <div style="font-weight:bold;">${currentAddr}</div>
                 <div style="font-size:12px; color:#666;">
-                    ${p.city || 'כללי'} | ₪${FinanceLogic.formatNumber(p.price)} | ${p.rooms} חד'
+                    ${currentCity} | ₪${FinanceLogic.formatNumber(currentPrice)} | ${p.rooms || '?'} חד'
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:15px;">
