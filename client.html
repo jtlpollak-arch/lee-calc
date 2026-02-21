@@ -618,7 +618,7 @@
             return 0;
         });
 
-        renderPropsGrid(filtered);
+        renderPropsGrid(filtered, bankProperties);
     };
 
     window.selectPropForCalc = async (price, address) => {
@@ -643,107 +643,123 @@
         return 'קישור לנכס';
     }
 
-    function renderPropsGrid(props) {
-        const list = document.getElementById('p-list');
-        const archiveList = document.getElementById('archive-list');
-        const archiveSection = document.getElementById('archive-section');
-        if(!list) return;
+    function renderPropsGrid(props, allPropsForArchive) {
+    const list = document.getElementById('p-list');
+    const archiveList = document.getElementById('archive-list');
+    const archiveSection = document.getElementById('archive-section');
+    if(!list) return;
+    
+    const favs = currentProjectData.favorites || [];
+    const ratings = currentProjectData.ratings || {};
+    const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
+    const adminSettings = {
+        lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
+        lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
+        brokerageRateSale: currentProjectData.brokerageRateSale || 2,
+        brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
+    };
+
+    // 1. נכסים אקטיביים להצגה בגריד הראשי (מושפעים מהפילטר)
+    const activeProps = props.filter(p => p.status === 'ACTIVE');
+    
+    // 2. תיקון: לקיחת נכסים מהבנק הכללי וחישוב אחוז התאמה עבורם
+    const archivedProps = (allPropsForArchive || bankProperties)
+        .filter(p => p.status === 'SOLD' || p.status === 'BOUGHT')
+        .map(p => ({
+            ...p,
+            matchPercent: calculatePropMatch(p, currentProjectData)
+        }));
+
+    const mapFunction = (p, idx) => {
+        const isInactive = p.status !== 'ACTIVE';
+        const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
+        const currentRating = ratings[p.address] || 0;
+        const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
+        const isOk = sim.finalBalance >= 0;
+        const matchScore = p.matchPercent || 0;
+        const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
+
+        let stars = '';
+        for(let i=1; i<=5; i++) stars += `<i data-lucide="star" size="18" class="star ${i <= currentRating ? 'filled' : ''}" onclick="window.updateRating('${p.address}', ${i})"></i>`;
         
-        const favs = currentProjectData.favorites || [];
-        const ratings = currentProjectData.ratings || {};
-        const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
-        const adminSettings = {
-            lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
-            lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
-            brokerageRateSale: currentProjectData.brokerageRateSale || 2,
-            brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
-        };
+        let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
+        let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
+        const links = p.links || (p.link ? [p.link] : []);
+        let linkUI = '';
+        
+        if (links.length === 1) {
+            linkUI = `<a href="${links[0]}" target="_blank" class="icon-btn"><i data-lucide="external-link" size="18"></i></a>`;
+        } else if (links.length > 1) {
+            const dropdownItems = links.map((l, i) => `
+                <a href="${l}" target="_blank" class="link-option">
+                    <i data-lucide="link" size="14"></i>
+                    <span>${getSiteName(l)}</span>
+                </a>
+            `).join('');
+            linkUI = `<div style="position:relative;"><button class="icon-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('active')"><i data-lucide="external-link" size="18"></i></button><div class="links-dropdown">${dropdownItems}</div></div>`;
+        }
 
-        const activeProps = props.filter(p => p.status === 'ACTIVE');
-        const archivedProps = props.filter(p => p.status === 'SOLD' || p.status === 'BOUGHT');
+        const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
+        const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
 
-        const mapFunction = (p, idx) => {
-            const isInactive = p.status !== 'ACTIVE';
-            const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
-            const currentRating = ratings[p.address] || 0;
-            const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
-            const isOk = sim.finalBalance >= 0;
-            const matchScore = p.matchPercent || 0;
-            const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
-
-            let stars = '';
-            for(let i=1; i<=5; i++) stars += `<i data-lucide="star" size="18" class="star ${i <= currentRating ? 'filled' : ''}" onclick="window.updateRating('${p.address}', ${i})"></i>`;
-            
-            let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
-            let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
-            const links = p.links || (p.link ? [p.link] : []);
-            let linkUI = '';
-            
-            if (links.length === 1) {
-                linkUI = `<a href="${links[0]}" target="_blank" class="icon-btn"><i data-lucide="external-link" size="18"></i></a>`;
-            } else if (links.length > 1) {
-                const dropdownItems = links.map((l, i) => `
-                    <a href="${l}" target="_blank" class="link-option">
-                        <i data-lucide="link" size="14"></i>
-                        <span>${getSiteName(l)}</span>
-                    </a>
-                `).join('');
-                linkUI = `<div style="position:relative;"><button class="icon-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('active')"><i data-lucide="external-link" size="18"></i></button><div class="links-dropdown">${dropdownItems}</div></div>`;
-            }
-
-            const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
-            const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
-
-            return `
-            <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
-                ${featuredRibbon}${statusOverlay}
-                <div class="budget-badge ${isOk ? 'ok' : 'over'}">
-                    <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
+        return `
+        <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
+            ${featuredRibbon}${statusOverlay}
+            <div class="budget-badge ${isOk ? 'ok' : 'over'}">
+                <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
+            </div>
+            ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
+            <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
+                <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                     <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
+                     <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
                 </div>
-                ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
-                <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
-                    <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                         <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
-                         <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
-                    </div>
-                    <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
-                    <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
-                    <div class="prop-specs">
-                        <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
-                        <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
-                        <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
-                    </div>
-                    ${simpleMap}
-                    <div class="lifestyle-mini-badges">
-                        <div class="l-badge" title="חינוך"><i data-lucide="graduation-cap" size="12"></i> ${p.scoreEdu || '?'}/5</div>
-                        <div class="l-badge" title="תחבורה"><i data-lucide="bus" size="12"></i> ${p.scoreTrans || '?'}/5</div>
-                        <div class="l-badge" title="פנאי"><i data-lucide="coffee" size="12"></i> ${p.scoreLeisure || '?'}/5</div>
-                        <div class="l-badge" title="ים"><i data-lucide="waves" size="12"></i> ${p.scoreSea || '?'}/5</div>
-                    </div>
-                    ${p.leeTip ? `<div class="lee-tip-box"><span>${p.leeTip}</span></div>` : ''}
-                    <div class="rating-stars">${stars}</div>
+                <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
+                <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
+                <div class="prop-specs">
+                    <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
+                    <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
+                    <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
                 </div>
-                <div class="action-group ${isInactive ? 'disabled-actions' : ''}">
-                    <div style="display:flex; gap:8px; justify-content: center; margin-bottom: 5px;">
-                        <button class="icon-btn" onclick="window.openAi('${b64EncodeUnicode(p.aiAnalysis || "")}')"><i data-lucide="sparkles" size="18"></i></button>
-                        ${linkUI}
-                        <button class="icon-btn ${favs.includes(p.address) ? 'active-fav' : ''}" onclick="window.tFav('${p.address}', ${favs.includes(p.address)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.address) ? '#e74c3c' : 'none'}"></i></button>
-                    </div>
-                    <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">בחר</button>
-                    <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
+                ${simpleMap}
+                <div class="lifestyle-mini-badges">
+                    <div class="l-badge" title="חינוך"><i data-lucide="graduation-cap" size="12"></i> ${p.scoreEdu || '?'}/5</div>
+                    <div class="l-badge" title="תחבורה"><i data-lucide="bus" size="12"></i> ${p.scoreTrans || '?'}/5</div>
+                    <div class="l-badge" title="פנאי"><i data-lucide="coffee" size="12"></i> ${p.scoreLeisure || '?'}/5</div>
+                    <div class="l-badge" title="ים"><i data-lucide="waves" size="12"></i> ${p.scoreSea || '?'}/5</div>
                 </div>
-            </div>`;
-        };
+                ${p.leeTip ? `<div class="lee-tip-box"><span>${p.leeTip}</span></div>` : ''}
+                <div class="rating-stars">${stars}</div>
+            </div>
+            <div class="action-group ${isInactive ? 'disabled-actions' : ''}">
+                <div style="display:flex; gap:8px; justify-content: center; margin-bottom: 5px;">
+                    <button class="icon-btn" onclick="window.openAi('${b64EncodeUnicode(p.aiAnalysis || "")}')"><i data-lucide="sparkles" size="18"></i></button>
+                    ${linkUI}
+                    <button class="icon-btn ${favs.includes(p.address) ? 'active-fav' : ''}" onclick="window.tFav('${p.address}', ${favs.includes(p.address)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.address) ? '#e74c3c' : 'none'}"></i></button>
+                </div>
+                <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">בחר</button>
+                <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
+            </div>
+        </div>`;
+    };
 
-        list.innerHTML = activeProps.map((p, i) => mapFunction(p, i)).join('');
-        if (archiveList) {
+    // הצגת נכסים אקטיביים
+    list.innerHTML = activeProps.map((p, i) => mapFunction(p, i)).join('');
+    
+    // הצגת הארכיון בצורה דינמית
+    if (archiveList && archiveSection) {
+        if (archivedProps.length > 0) {
             const archiveContent = archivedProps.map((p, i) => mapFunction(p, i + 1000)).join('');
             archiveList.innerHTML = `<div class="archive-track">${archiveContent}${archiveContent}${archiveContent}</div>`;
-            archiveSection.style.display = archivedProps.length > 0 ? 'block' : 'none';
+            archiveSection.style.display = 'block';
+        } else {
+            archiveSection.style.display = 'none';
         }
-        lucide.createIcons();
     }
+    
+    lucide.createIcons();
+}
 
     function b64EncodeUnicode(str) {
         return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
