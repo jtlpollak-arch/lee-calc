@@ -261,7 +261,15 @@
         .about-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
         .about-list i { color: var(--primary); }
 
+        .checklist-body {max-height: 70vh; overflow-y: auto; padding-left: 10px; /* למנוע מהסקרול להסתיר טקסט */ }
+
         @media (max-width: 900px) { .prop-grid { grid-template-columns: 1fr; } .finance-grid { grid-template-columns: 1fr; } }
+
+        #checklist-modal { 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+        }
     </style>
 </head>
 <body>
@@ -455,6 +463,35 @@
                     <i data-lucide="message-circle" style="width: 18px;"></i> WhatsApp
                 </a>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="checklist-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-x" onclick="closeChecklist()"><i data-lucide="x"></i></span>
+        <h2 id="checklist-title" style="color:var(--secondary); font-size:18px; margin-bottom:20px;"></h2>
+        
+        <div class="checklist-body">
+            <div class="input-wrapper">
+                <label>רמת רעש (1-שקט מאוד, 5-רועש)</label>
+                <input type="range" id="check-noise" min="1" max="5" value="3">
+            </div>
+            <div class="input-wrapper">
+                <label>מצב תחזוקה (1-מוזנח, 5-משופץ קומפלט)</label>
+                <input type="range" id="check-condition" min="1" max="5" value="3">
+            </div>
+            <hr>
+            <div style="display:grid; gap:10px;">
+                <label><input type="checkbox" id="check-moisture"> האם יש סימני רטיבות/עובש?</label>
+                <label><input type="checkbox" id="check-renovated"> האם המטבח חדש?</label>
+                <label><input type="checkbox" id="check-light"> האם הדירה מוארת מספיק?</label>
+            </div>
+            <textarea id="check-notes" placeholder="הערות אישיות מהסיור..." style="width:100%; height:80px; margin-top:15px; border-radius:8px; padding:10px;"></textarea>
+            
+            <button onclick="window.saveChecklist()" class="btn-share-experience" style="width:100%; justify-content:center; margin-top:20px;">
+                שמירת סיכום סיור
+            </button>
         </div>
     </div>
 </div>
@@ -739,6 +776,7 @@
                     <button class="icon-btn ${favs.includes(p.address) ? 'active-fav' : ''}" onclick="window.tFav('${p.address}', ${favs.includes(p.address)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.address) ? '#e74c3c' : 'none'}"></i></button>
                 </div>
                 <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">בחר</button>
+                <button class="btn-quick-action" style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff;" onclick="window.openChecklist('${p.address}')"><i data-lucide="clipboard-check" size="14"></i> צ'ק-ליסט סיור</button>
                 <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
             </div>
         </div>`;
@@ -892,8 +930,55 @@
             await updateDoc(doc(db, "projects", clientID), { [e.target.id.replace('in-', '')]: FinanceLogic.cleanNumber(e.target.value) });
         };
     });
-
     lucide.createIcons();
+
+
+let currentChecklistProp = null;
+
+window.openChecklist = (addr) => {
+    currentChecklistProp = addr;
+    document.getElementById('checklist-title').innerText = `צ'ק-ליסט סיור: ${addr}`;
+    
+    // טעינת נתונים קיימים אם הלקוח כבר מילא בעבר
+    const existing = currentProjectData.tourNotes?.[addr] || {};
+    document.getElementById('check-noise').value = existing.noise || 3;
+    document.getElementById('check-condition').value = existing.condition || 3;
+    document.getElementById('check-moisture').checked = existing.moisture || false;
+    document.getElementById('check-renovated').checked = existing.renovated || false;
+    document.getElementById('check-light').checked = existing.light || false;
+    document.getElementById('check-notes').value = existing.notes || "";
+
+    document.getElementById('checklist-modal').style.display = 'flex';
+    lucide.createIcons();
+};
+
+window.closeChecklist = () => {
+    document.getElementById('checklist-modal').style.display = 'none';
+};
+
+window.saveChecklist = async () => {
+    if (!clientID || !currentChecklistProp) return;
+    
+    const checklistData = {
+        noise: document.getElementById('check-noise').value,
+        condition: document.getElementById('check-condition').value,
+        moisture: document.getElementById('check-moisture').checked,
+        renovated: document.getElementById('check-renovated').checked,
+        light: document.getElementById('check-light').checked,
+        notes: document.getElementById('check-notes').value,
+        timestamp: new Date().toISOString()
+    };
+
+    const newTourNotes = { ...(currentProjectData.tourNotes || {}) };
+    newTourNotes[currentChecklistProp] = checklistData;
+
+    await updateDoc(doc(db, "projects", clientID), { tourNotes: newTourNotes });
+    
+    alert("סיכום הסיור נשמר בהצלחה!");
+    window.closeChecklist();
+};
+
+
 </script>
 </body>
 </html>

@@ -59,6 +59,30 @@
             display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #eee; cursor: pointer; margin-top: 10px;
         }
         .featured-wrapper input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+
+        /* עיצוב חדש ליומן סיורים */
+        .tour-note-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-right: 5px solid #FFD700;
+        }
+        .tour-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .tour-badge {
+            background: #f0f2f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #444;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +197,14 @@
     </div>
 </div>
 
+<div class="card" id="tour-notes-section">
+    <h3>📋 תובנות מהשטח (סיכומי סיורי לקוח)</h3>
+    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">כאן מופיעים הנתונים שהלקוח מזין בצ'ק-ליסט הסיור בפורטל האישי שלו.</p>
+    <div id="admin-tour-notes-list">
+        <p style="color:#888; font-style:italic;">טוען סיכומים מהשטח...</p>
+    </div>
+</div>
+
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3>🏠 נכסים משויכים לתיק זה</h3>
@@ -250,6 +282,39 @@
             'CANCELLED': '7'
         };
         return mapping[status] || null;
+    };
+
+    // פונקציה להצגת סיכומי סיורים (תופעל מתוך admin-logic.js)
+    window.renderTourNotesForAdmin = (tourNotes) => {
+        const container = document.getElementById('admin-tour-notes-list');
+        if (!container) return;
+
+        if (!tourNotes || Object.keys(tourNotes).length === 0) {
+            container.innerHTML = '<p style="color:#888; font-style:italic;">הלקוח טרם מילא סיכומי סיור בפורטל.</p>';
+            return;
+        }
+
+        let html = '';
+        for (const [address, data] of Object.entries(tourNotes)) {
+            const date = data.timestamp ? new Date(data.timestamp).toLocaleDateString('he-IL') : 'תאריך לא ידוע';
+            html += `
+                <div class="tour-note-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #eee; padding-bottom:8px;">
+                        <strong style="color:#2c3e50;">📍 ${address}</strong>
+                        <span style="font-size:11px; color:#999;">${date}</span>
+                    </div>
+                    <div class="tour-grid">
+                        <div class="tour-badge">🔈 רעש: ${data.noise}/5</div>
+                        <div class="tour-badge">🛠 מצב: ${data.condition}/5</div>
+                        <div class="tour-badge">💧 רטיבות: ${data.moisture ? '🔴 יש' : '✅ אין'}</div>
+                        <div class="tour-badge">☀️ אור: ${data.light ? '✅ מוארת' : '❌ חשוכה'}</div>
+                        <div class="tour-badge">🍳 מטבח חדש: ${data.renovated ? '✅ כן' : '❌ לא'}</div>
+                    </div>
+                    ${data.notes ? `<div style="margin-top:12px; font-size:13px; color:#555; background:#fdfaf0; padding:8px; border-radius:4px;"><strong>הערות הלקוח:</strong> "${data.notes}"</div>` : ''}
+                </div>
+            `;
+        }
+        container.innerHTML = html;
     };
 </script>
 

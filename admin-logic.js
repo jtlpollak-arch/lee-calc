@@ -80,20 +80,23 @@ async function init() {
     }
 
     try {
-        // --- עדכון: טעינת בנק הנכסים לפני הכל כדי שרנדר הנכסים יזהה שינויי כתובת ---
         const bankSnap = await getDocs(collection(db, "property_bank"));
         allBankProperties = [];
         bankSnap.forEach(s => {
             allBankProperties.push({ id: s.id, ...s.data() });
         });
-        // ------------------------------------------------------------------
 
         const snap = await getDoc(doc(db, "projects", clientID));
         if (snap.exists()) {
             const d = snap.data();
             console.log("Client data loaded:", d);
             
-            // פרטי כותרת וקשר
+            // --- החלק החדש: הצגת סיכומי הסיורים ---
+            if (window.renderTourNotesForAdmin) {
+                window.renderTourNotesForAdmin(d.tourNotes);
+            }
+            // -------------------------------------
+
             const nameDisp = document.getElementById('client-name-display');
             if (nameDisp) nameDisp.innerText = d.clientName || "לקוח ללא שם";
             
@@ -112,13 +115,11 @@ async function init() {
                 document.getElementById('in-clientName').value = d.clientName || "";
             }
             
-            // אסטרטגיה והערות
             if(document.getElementById('in-clientNeeds')) document.getElementById('in-clientNeeds').value = d.clientNeeds || "";
             if(document.getElementById('in-privateNotes')) document.getElementById('in-privateNotes').value = d.privateNotes || "";
             if(document.getElementById('in-targetDate')) document.getElementById('in-targetDate').value = d.targetDate || "";
             if(document.getElementById('in-followUpDate')) document.getElementById('in-followUpDate').value = d.followUpDate || "";
             
-            // ניהול דחיפות
             const urgentCheckbox = document.getElementById('in-isNotesUrgent');
             if (urgentCheckbox) {
                 urgentCheckbox.checked = d.isNotesUrgent || false;
@@ -129,7 +130,6 @@ async function init() {
                 });
             }
 
-            // האזנה לשינוי תאריך מעקב
             const followUpInput = document.getElementById('in-followUpDate');
             if (followUpInput) {
                 followUpInput.addEventListener('change', () => {
@@ -138,37 +138,30 @@ async function init() {
                 });
             }
 
-            // טעינת אחוזי עמלה (עם ברירות מחדל)
             document.getElementById('in-brokerageRateSale').value = d.brokerageRateSale !== undefined ? d.brokerageRateSale : 2;
             document.getElementById('in-lawyerRateSale').value = d.lawyerRateSale !== undefined ? d.lawyerRateSale : 0.5;
             document.getElementById('in-brokerageRatePurch').value = d.brokerageRatePurch !== undefined ? d.brokerageRatePurch : 2;
             document.getElementById('in-lawyerRatePurch').value = d.lawyerRatePurch !== undefined ? d.lawyerRatePurch : 0.5;
             
-            // טעינת העדפות התאמה אישית
             if(document.getElementById('in-prefEdu')) document.getElementById('in-prefEdu').value = d.prefEdu !== undefined ? d.prefEdu : 3;
             if(document.getElementById('in-prefTrans')) document.getElementById('in-prefTrans').value = d.prefTrans !== undefined ? d.prefTrans : 3;
             if(document.getElementById('in-prefLeisure')) document.getElementById('in-prefLeisure').value = d.prefLeisure !== undefined ? d.prefLeisure : 3;
             if(document.getElementById('in-prefSea')) document.getElementById('in-prefSea').value = d.prefSea !== undefined ? d.prefSea : 3;
             if(document.getElementById('in-limitHighFloor')) document.getElementById('in-limitHighFloor').checked = d.limitHighFloor || false;
 
-            // נכסים ומועדפים
             currentProperties = d.properties || [];
             window.currentFavorites = d.favorites || [];
             currentRatings = d.ratings || {}; 
             
-            // עכשיו renderAssigned ימצא את המידע ב-allBankProperties הטעון
             renderAssigned();
 
-            // הוספת האזנה לשינויים לכל השדות (לצורך דגל השמירה)
             document.querySelectorAll('input, select, textarea').forEach(el => {
                 el.addEventListener('input', markChanged);
             });
             
-            // איפוס הדגל לאחר הטעינה הראשונית
             window.hasUnsavedChanges = false;
             if (document.getElementById('save-status')) document.getElementById('save-status').style.display = 'none';
         } else {
-            console.error("No such document in Firestore!");
             alert("לא נמצאו נתונים עבור לקוח זה.");
         }
     } catch (error) {
