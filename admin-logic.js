@@ -19,7 +19,7 @@ const STATUS_TO_ROADMAP_STEP = {
     'SIGNING': '3',
     'DELIVERY': '4',
     'DONE': '5',
-	'FROZEN': '6',   // הקפאה
+    'FROZEN': '6',   // הקפאה
     'CANCELLED': '7' // בוטל
 };
 
@@ -91,7 +91,7 @@ async function init() {
             const d = snap.data();
             console.log("Client data loaded:", d);
             
-            // --- החלק החדש: הצגת סיכומי הסיורים ---
+            // --- החלק החדש: הצגת סיכומי הסיורים בטעינה ראשונית ---
             if (window.renderTourNotesForAdmin) {
                 window.renderTourNotesForAdmin(d.tourNotes);
             }
@@ -178,7 +178,6 @@ document.getElementById('btn-save-all').onclick = async () => {
     const currentStatus = document.getElementById('in-status').value;
     
     // גזירת שלב ה-Roadmap מהסטטוס שנבחר
-    // אם הסטטוס הוא הקפאה/ביטול, אנחנו לא מעדכנים את השלב כדי שהציר יישאר במקום האחרון שלו
     const newRoadmapStep = STATUS_TO_ROADMAP_STEP[currentStatus];
 
     const data = {
@@ -211,7 +210,6 @@ document.getElementById('btn-save-all').onclick = async () => {
         lastUpdated: new Date().toISOString()
     };
 
-    // הזרקת שלב ציר הזמן רק אם הוא אחד מ-5 השלבים הפעילים
     if (newRoadmapStep) {
         data.roadmapStep = newRoadmapStep;
     }
@@ -243,12 +241,10 @@ function renderAssigned() {
     }
 
     container.innerHTML = currentProperties.map((p, i) => {
-        // 1. מחפשים את הנכס בבנק לפי ID (propertyId) או כתובת
         const liveProp = allBankProperties.find(bp => 
             (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
         );
 
-        // 2. משתמשים במידע המעודכן מהבנק אם הוא קיים
         const currentAddr = liveProp ? liveProp.address : p.address;
         const currentPrice = liveProp ? liveProp.price : p.price;
         const currentCity = liveProp ? liveProp.city : (p.city || 'כללי');
@@ -275,33 +271,22 @@ function renderAssigned() {
 
 window.remP = (i) => { 
     if (!currentProperties[i]) return;
-
-    // 1. שמירת הכתובת של הנכס להסרה
     const addrToRemove = currentProperties[i].address;
 
     if (confirm(`האם להסיר את ${addrToRemove} מהתיק? (זה ינקה גם מועדפים ודירוגים)`)) {
-        
-        // א. הסרה מרשימת הנכסים המשויכים
         currentProperties.splice(i, 1); 
-
-        // ב. ניקוי מהמועדפים (Favorites)
         if (window.currentFavorites) {
             window.currentFavorites = window.currentFavorites.filter(f => 
                 f && f.trim() !== addrToRemove.trim()
             );
         }
-
-        // ג. ניקוי מהדירוגים (Ratings) - עכשיו זה יעבוד כי הוספנו את המשתנה
         if (currentRatings) {
-            // אנחנו בודקים אם קיימת כתובת כזו במפתחות של האובייקט ומוחקים
             Object.keys(currentRatings).forEach(key => {
                 if (key.trim() === addrToRemove.trim()) {
                     delete currentRatings[key];
                 }
             });
         }
-
-        // ד. רענון התצוגה וסימון לשינוי
         renderAssigned(); 
         markChanged();
     }
@@ -336,7 +321,6 @@ if (openBankBtn) {
         renderBankList();
         modal.style.display = 'block';
     };
-    
     window.openBankModal = openBankBtn.onclick;
 }
 
@@ -392,8 +376,6 @@ if (confirmBtn) {
         selectedIDs.forEach(id => {
             const propData = allBankProperties.find(p => p.id === id);
             if (propData) {
-                // במקום למחוק את ה-ID, אנחנו שומרים את כל הנתונים 
-                // ומוסיפים להם שדה שנקרא propertyId כדי שנוכל לזהות את הנכס תמיד
                 const propWithId = { 
                     ...propData, 
                     propertyId: id 
@@ -415,4 +397,32 @@ document.addEventListener('DOMContentLoaded', init);
 document.getElementById('in-clientPhone').oninput = (e) => {
     e.target.value = FinanceLogic.formatPhone(e.target.value);
     markChanged();
+};
+
+// פונקציית רענון הנתונים מהשטח (כדי שהכפתור ב-HTML יעבוד)
+window.manualRefreshTourNotes = async () => {
+    if (!clientID) return;
+    const btn = document.querySelector('[onclick="window.manualRefreshTourNotes()"]');
+    const originalText = btn ? btn.innerHTML : '🔄 רענון נתונים מהשטח';
+    
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '🔄 טוען...';
+        }
+        
+        const snap = await getDoc(doc(db, "projects", clientID));
+        if (snap.exists()) {
+            const d = snap.data();
+            if (window.renderTourNotesForAdmin) {
+                window.renderTourNotesForAdmin(d.tourNotes || {});
+            }
+        }
+    } catch (e) { console.error(e); }
+    finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
 };

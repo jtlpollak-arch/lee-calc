@@ -198,7 +198,10 @@
 </div>
 
 <div class="card" id="tour-notes-section">
-    <h3>📋 תובנות מהשטח (סיכומי סיורי לקוח)</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;">📋 תובנות מהשטח (סיכומי סיורי לקוח)</h3>
+        <button type="button" class="btn" onclick="window.manualRefreshTourNotes()" style="background:#f0f2f5; font-size:12px; padding:6px 12px; border:1px solid #ddd;">🔄 רענון נתונים מהשטח</button>
+    </div>
     <p style="font-size: 12px; color: #666; margin-bottom: 15px;">כאן מופיעים הנתונים שהלקוח מזין בצ'ק-ליסט הסיור בפורטל האישי שלו.</p>
     <div id="admin-tour-notes-list">
         <p style="color:#888; font-style:italic;">טוען סיכומים מהשטח...</p>
@@ -234,6 +237,9 @@
 </div>
 
 <script type="module">
+    import { db } from './firebase-config.js';
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
     window.currentFavorites = []; 
     window.hasUnsavedChanges = false;
     
@@ -284,7 +290,7 @@
         return mapping[status] || null;
     };
 
-    // פונקציה להצגת סיכומי סיורים (תופעל מתוך admin-logic.js)
+    // פונקציה להצגת סיכומי סיורים
     window.renderTourNotesForAdmin = (tourNotes) => {
         const container = document.getElementById('admin-tour-notes-list');
         if (!container) return;
@@ -295,7 +301,12 @@
         }
 
         let html = '';
-        for (const [address, data] of Object.entries(tourNotes)) {
+        // מיון לפי תאריך - חדש ביותר למעלה
+        const sortedEntries = Object.entries(tourNotes).sort((a, b) => {
+            return new Date(b[1].timestamp || 0) - new Date(a[1].timestamp || 0);
+        });
+
+        for (const [address, data] of sortedEntries) {
             const date = data.timestamp ? new Date(data.timestamp).toLocaleDateString('he-IL') : 'תאריך לא ידוע';
             html += `
                 <div class="tour-note-card">
@@ -315,6 +326,22 @@
             `;
         }
         container.innerHTML = html;
+    };
+
+    // פונקציית רענון ידנית עצמאית
+    window.manualRefreshTourNotes = async () => {
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (!id) return;
+        const btn = document.querySelector('[onclick="window.manualRefreshTourNotes()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '🔄 טוען...';
+        try {
+            const snap = await getDoc(doc(db, "projects", id));
+            if (snap.exists()) {
+                window.renderTourNotesForAdmin(snap.data().tourNotes);
+            }
+        } catch (e) { console.error(e); }
+        btn.innerHTML = originalText;
     };
 </script>
 
