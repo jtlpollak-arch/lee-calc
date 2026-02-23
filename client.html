@@ -19,6 +19,23 @@
         
         header { background: #000; padding: 15px 40px; border-bottom: 4px solid var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         
+        /* הוסיפי את זה בתוך ה-style בתחילת הקובץ */
+        .type-badge {
+    background: rgba(228, 186, 236, 0.137); /* ירוק שקוף עדין לרקע */
+    color: #27ae60;                      /* צבע הטקסט הירוק (משתנה --safe שלך) */
+    border: 1px solid rgba(39, 174, 96, 0.5); /* גבול ירוק חצי שקוף */
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.1); /* צל ירקרק עדין */
+    backdrop-filter: blur(4px);
+}
+
         /* כפתור שיתוף חוויה חדש */
         .btn-share-experience {
             background: var(--primary);
@@ -688,6 +705,23 @@
     }
 
     function renderPropsGrid(props, allPropsForArchive) {
+
+        // הוסיפי את זה בתוך renderPropsGrid
+        const typeIcons = {
+            'דירה': 'building-2',
+            'דירת גן': 'leaf',
+            'גג/פנטהאוז': 'arrow-up-circle',
+            'דופלקס': 'layers',
+            'תיירות ונופש': 'palmtree',
+            'מרתף/פרטר': 'arrow-down-to-line',
+            'טריפלקס': 'component',
+            'יחידת דיור': 'home',
+            'סטודיו/לופט': 'layout',
+            'בית פרטי/קוטג\'': 'tent',
+            'דו משפחתי': 'split'
+        };
+
+
     const list = document.getElementById('p-list');
     const archiveList = document.getElementById('archive-list');
     const archiveSection = document.getElementById('archive-section');
@@ -754,13 +788,22 @@
             </div>
             ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
             <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
-                <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
+                ${p.propertyType ? `
+                    <div class="type-badge">
+                        <i data-lucide="${typeIcons[p.propertyType] || 'home'}" size="12"></i> 
+                        ${p.propertyType}
+                    </div>
+                ` : ''}
+
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
                      <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
                      <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
                 </div>
                 <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
+
+                <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
                 <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
+                
                 <div class="prop-specs">
                     <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
                     <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
