@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+        if (/Android|iPhone/i.test(navigator.userAgent)) {
+            window.location.href = "client-mobile.html" + window.location.search;
+        }
+    </script>
+    
     <title>פורטל לקוח VIP | לי אטדגי</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -824,6 +831,19 @@
                 brokerageRateSale: currentProjectData.brokerageRateSale || 2,
                 brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
             };
+
+            // עדכון הכותרות (Labels) עם האחוזים המפורשים
+            const lblBrS = document.getElementById('label-brS');
+            if (lblBrS) lblBrS.innerText = `דמי תיווך מכירה (${settings.brokerageRateSale}% + מע"מ)`;
+
+            const lblLwS = document.getElementById('label-lwS');
+            if (lblLwS) lblLwS.innerText = `שכר טרחת עו"ד (${settings.lawyerRateSale}% + מע"מ)`;
+
+            const lblBrP = document.getElementById('label-brP');
+            if (lblBrP) lblBrP.innerText = `דמי תיווך קנייה (${settings.brokerageRatePurch}% + מע"מ)`;
+
+            const lblLwP = document.getElementById('label-lwP');
+            if (lblLwP) lblLwP.innerText = `שכר טרחת עו"ד (${settings.lawyerRatePurch}% + מע"מ)`;
 
             const res = FinanceLogic.calculateAll({...currentProjectData, ...settings});
             document.getElementById('c-name').innerText = currentProjectData.clientName;
