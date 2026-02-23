@@ -648,7 +648,7 @@ const renderBank = () => {
                 <td>
                     ${featuredIcon}${d.data.address}${hotBadge}${statusTag} 
                     <br>
-                    <small style="color:#888;">${d.data.city || 'ללא עיר'} | חינוך: ${d.data.scoreEdu || '?'}/5 | ים: ${d.data.scoreSea || '?'}/5</small>
+                    <small style="color:#888;">${d.data.city || 'ללא עיר'} | ${d.data.propertyType || 'סוג נכס לא הוגדר'}</small>
                 </td>
                 <td>₪${FinanceLogic.formatNumber(d.data.price)}</td>
                 <td>${d.data.rooms} חד', קומה ${d.data.floor}, ${d.data.sqm} מ"ר</td>
@@ -696,6 +696,7 @@ window.delPr = async (id, addr) => {
 window.editPr = (id, d) => {
     document.getElementById('edit-prop-id').value = id;
     document.getElementById('p-address').value = d.address;
+    document.getElementById('p-type').value = d.propertyType || "";
     document.getElementById('p-price').value = FinanceLogic.formatNumber(d.price);
     document.getElementById('p-city-select').value = d.city || "";
     if (Array.isArray(d.links)) {
@@ -726,6 +727,7 @@ document.getElementById('save-prop-to-db').onclick = async () => {
 
     const data = { 
         address: document.getElementById('p-address').value, 
+        propertyType: document.getElementById('p-type').value,
         price: FinanceLogic.cleanNumber(document.getElementById('p-price').value), 
         city: document.getElementById('p-city-select').value,
         links: linkArray,

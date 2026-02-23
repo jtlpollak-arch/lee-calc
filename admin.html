@@ -50,11 +50,11 @@
             background: #00cec9;
             color: black;
         }
-		
-		.btn-action:hover {
-			opacity: 0.8;
-			transform: translateY(-1px);
-		}
+        
+        .btn-action:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
 
         .btn-inject { color: #8e44ad; border-color: #8e44ad; } 
         .btn-inject:hover { background: #8e44ad; color: white; }
@@ -295,17 +295,17 @@
                         <button class="btn-action" id="save-ai-settings" style="width:100%; margin-top:10px; padding:12px;">שמרי הגדרות AI</button>
                     </div>
                 </div>
-				
-				<div style="margin-top: 30px;">
-					<h2 style="color: #ff7675;">ניהול מסד נתונים</h2>
-					<div style="background: rgba(231, 76, 60, 0.1); padding: 25px; border-radius: 12px; border: 1px solid #ff7675;">
-						<label style="color: #ff7675;">⚠️ אזור מסוכן: מחיקת כל הנתונים</label>
-						<p style="font-size: 13px; color: #ccc; margin-bottom: 15px;">פעולה זו תמחוק את כל הלקוחות, בנק הנכסים, הערים ויומן הפעילות. לא ניתן לשחזר נתונים שנמחקו!</p>
-						<button class="btn-action btn-del" id="master-reset-db" style="width: 100%; padding: 15px; font-weight: bold; font-size: 16px;">
-							מחיקת כל הנתונים ואיפוס DB 💣
-						</button>
-					</div>
-				</div>
+                
+                <div style="margin-top: 30px;">
+                    <h2 style="color: #ff7675;">ניהול מסד נתונים</h2>
+                    <div style="background: rgba(231, 76, 60, 0.1); padding: 25px; border-radius: 12px; border: 1px solid #ff7675;">
+                        <label style="color: #ff7675;">⚠️ אזור מסוכן: מחיקת כל הנתונים</label>
+                        <p style="font-size: 13px; color: #ccc; margin-bottom: 15px;">פעולה זו תמחוק את כל הלקוחות, בנק הנכסים, הערים ויומן הפעילות. לא ניתן לשחזר נתונים שנמחקו!</p>
+                        <button class="btn-action btn-del" id="master-reset-db" style="width: 100%; padding: 15px; font-weight: bold; font-size: 16px;">
+                            מחיקת כל הנתונים ואיפוס DB 💣
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -322,6 +322,21 @@
                     
                     <label>כתובת:</label>
                     <input type="text" id="p-address">
+
+                    <label>סוג נכס:</label>
+                    <select id="p-type">
+                        <option value="">בחרי סוג נכס...</option>
+                        <option value="דירה">🏢 דירה: מגורים סטנדרטית</option>
+                        <option value="דירת גן">🏡 דירת גן: קומת קרקע + חצר</option>
+                        <option value="פנטהאוז">🏙️ גג/פנטהאוז: קומה אחרונה + גג</option>
+                        <option value="דופלקס">🪜 דופלקס: שתי קומות</option>
+                        <option value="מרתף">🕳️ מרתף/פרטר: תת-קרקעי</option>
+                        <option value="טריפלקס">🏢 טריפלקס: שלוש קומות</option>
+                        <option value="יחידת דיור">🏠 יחידת דיור: יחידה עצמאית</option>
+                        <option value="סטודיו">🎨 סטודיו/לופט: חלל פתוח</option>
+                        <option value="בית פרטי">🏰 בית פרטי/קוטג': מבנה עצמאי</option>
+                        <option value="דו משפחתי">🏘️ דו משפחתי: קיר משותף</option>
+                    </select>
                     
                     <label>מחיר מבוקש (₪):</label>
                     <input type="text" id="p-price" class="format-num-admin">
