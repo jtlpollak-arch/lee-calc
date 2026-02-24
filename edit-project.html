@@ -60,7 +60,6 @@
         }
         .featured-wrapper input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
 
-        /* עיצוב חדש ליומן סיורים */
         .tour-note-card {
             background: #fff;
             border: 1px solid #eee;
@@ -106,7 +105,10 @@
         <label>מספר טלפון:</label>
         <input type="text" id="in-clientPhone" class="track-change">
 
-        <label>סטטוס ושלב בציר הזמן (Roadmap):</label>
+        <label>תאריך לידה:</label>
+        <input type="date" id="in-clientBirthday" class="track-change">
+
+        <label style="margin-top: 15px;">סטטוס ושלב בציר הזמן (Roadmap):</label>
         <select id="in-status" class="track-change">
             <optgroup label="שלבי ציר זמן פעילים">
                 <option value="INITIAL">🔍 שלב 1: חיפוש ואיתור נכס</option>
@@ -243,7 +245,6 @@
     window.currentFavorites = []; 
     window.hasUnsavedChanges = false;
     
-    // מעקב אחרי שינויים כדי להתריע לפני יציאה
     document.addEventListener('input', (e) => {
         if (e.target.classList.contains('track-change')) {
             window.hasUnsavedChanges = true;
@@ -269,43 +270,73 @@
         }
     });
 
-    // פונקציית עזר לניקוי דגלי שינויים לאחר שמירה
     window.clearChangeFlags = () => {
         window.hasUnsavedChanges = false;
         document.getElementById('save-status').style.display = 'none';
         document.getElementById('btn-save-all').classList.remove('unsaved');
     };
 
-    // לוגיקה למיפוי סטטוס לשלב Roadmap (בזמן שמירה)
-    window.getRoadmapStepFromStatus = (status) => {
-        const mapping = {
-            'INITIAL': '1',
-            'RESEARCH': '2',
-            'SIGNING': '3',
-            'DELIVERY': '4',
-            'DONE': '5',
-            'FROZEN': '6', // לא מעדכן את השלב
-            'CANCELLED': '7'
-        };
-        return mapping[status] || null;
+    // --- הפונקציה המעודכנת: הוספת שדה תאריך סגירה לכל נכס ---
+    window.renderAssigned = () => {
+        const container = document.getElementById('assigned-props-list');
+        if (!container) return;
+
+        if (window.currentProperties.length === 0) {
+            container.innerHTML = `<div style="padding:20px; text-align:center; color:#888; border:1px dashed #ddd; border-radius:8px;">אין נכסים משויכים לתיק זה</div>`;
+            return;
+        }
+
+        container.innerHTML = window.currentProperties.map((p, i) => {
+            // חיפוש נתוני הנכס בבנק לצורך הצגת כתובת ומחיר
+            const liveProp = window.allBankProperties ? window.allBankProperties.find(bp => 
+                (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
+            ) : null;
+
+            const currentAddr = liveProp ? liveProp.address : (p.address || "כתובת לא ידועה");
+            const currentPrice = liveProp ? liveProp.price : (p.price || 0);
+            const closingDate = p.closingDate || ""; // תאריך סגירה קיים בזיכרון
+
+            return `
+            <div class="assigned-item" style="flex-direction: column; align-items: stretch; gap: 10px; border-right: 4px solid #2c3e50;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="display:block;">${currentAddr}</strong>
+                        <small style="color:#666;">₪${Number(currentPrice).toLocaleString()}</small>
+                    </div>
+                    <button onclick="window.remP(${i})" style="color:#e74c3c; background:none; border:1px solid #ffdcdc; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px;">הסר</button>
+                </div>
+                
+                <div style="background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
+                    <label style="margin:0; font-size:11px; color:#2c3e50; white-space:nowrap;">📅 תאריך סגירת עסקה:</label>
+                    <input type="date" value="${closingDate}" 
+                           onchange="window.updatePropDate(${i}, this.value)" 
+                           style="padding: 4px; font-size: 12px; height: auto; width: auto; flex-grow:1;">
+                </div>
+            </div>
+            `;
+        }).join('');
     };
 
-    // פונקציה להצגת סיכומי סיורים
+    // פונקציית עזר לעדכון התאריך במערך הנכסים בזיכרון
+    window.updatePropDate = (index, value) => {
+        if (window.currentProperties && window.currentProperties[index]) {
+            window.currentProperties[index].closingDate = value;
+            // הפעלת דגל השינויים
+            window.hasUnsavedChanges = true;
+            document.getElementById('save-status').style.display = 'block';
+            document.getElementById('btn-save-all').classList.add('unsaved');
+        }
+    };
+
     window.renderTourNotesForAdmin = (tourNotes) => {
         const container = document.getElementById('admin-tour-notes-list');
         if (!container) return;
-
         if (!tourNotes || Object.keys(tourNotes).length === 0) {
             container.innerHTML = '<p style="color:#888; font-style:italic;">הלקוח טרם מילא סיכומי סיור בפורטל.</p>';
             return;
         }
-
         let html = '';
-        // מיון לפי תאריך - חדש ביותר למעלה
-        const sortedEntries = Object.entries(tourNotes).sort((a, b) => {
-            return new Date(b[1].timestamp || 0) - new Date(a[1].timestamp || 0);
-        });
-
+        const sortedEntries = Object.entries(tourNotes).sort((a, b) => new Date(b[1].timestamp || 0) - new Date(a[1].timestamp || 0));
         for (const [address, data] of sortedEntries) {
             const date = data.timestamp ? new Date(data.timestamp).toLocaleDateString('he-IL') : 'תאריך לא ידוע';
             html += `
@@ -321,14 +352,11 @@
                         <div class="tour-badge">☀️ אור: ${data.light ? '✅ מוארת' : '❌ חשוכה'}</div>
                         <div class="tour-badge">🍳 מטבח חדש: ${data.renovated ? '✅ כן' : '❌ לא'}</div>
                     </div>
-                    ${data.notes ? `<div style="margin-top:12px; font-size:13px; color:#555; background:#fdfaf0; padding:8px; border-radius:4px;"><strong>הערות הלקוח:</strong> "${data.notes}"</div>` : ''}
-                </div>
-            `;
+                </div>`;
         }
         container.innerHTML = html;
     };
 
-    // פונקציית רענון ידנית עצמאית
     window.manualRefreshTourNotes = async () => {
         const id = new URLSearchParams(window.location.search).get('id');
         if (!id) return;

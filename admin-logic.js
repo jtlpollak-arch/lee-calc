@@ -106,6 +106,10 @@ async function init() {
 
             document.getElementById('in-status').value = d.status || "INITIAL";
             document.getElementById('in-clientPhone').value = FinanceLogic.formatPhone(d.clientPhone || "");
+
+            if (document.getElementById('in-clientBirthday')) {
+                document.getElementById('in-clientBirthday').value = d.clientBirthday || "";
+            }
             
             if (document.getElementById('in-clientEmail')) {
                 document.getElementById('in-clientEmail').value = d.clientEmail || "";
@@ -184,6 +188,7 @@ document.getElementById('btn-save-all').onclick = async () => {
         clientName: document.getElementById('in-clientName') ? document.getElementById('in-clientName').value : (document.getElementById('client-name-display') ? document.getElementById('client-name-display').innerText : ""),
         status: currentStatus,
         clientPhone: document.getElementById('in-clientPhone').value,
+        clientBirthday: document.getElementById('in-clientBirthday') ? document.getElementById('in-clientBirthday').value : "",
         clientEmail: document.getElementById('in-clientEmail') ? document.getElementById('in-clientEmail').value : "",
         clientNeeds: document.getElementById('in-clientNeeds') ? document.getElementById('in-clientNeeds').value : "",
         privateNotes: document.getElementById('in-privateNotes').value,
@@ -231,6 +236,21 @@ document.getElementById('btn-save-all').onclick = async () => {
     }
 };
 
+// פונקציית העדכון החדשה שמתאימה לשינויים ב-HTML
+window.updatePropDate = (index, value) => {
+    if (currentProperties[index]) {
+        currentProperties[index].closingDate = value;
+        markChanged();
+    }
+};
+
+window.updatePropRole = (index, value) => {
+    if (currentProperties[index]) {
+        currentProperties[index].clientRole = value;
+        markChanged();
+    }
+};
+
 function renderAssigned() {
     const container = document.getElementById('assigned-props-container') || document.getElementById('assigned-props-list');
     if (!container) return;
@@ -252,17 +272,37 @@ function renderAssigned() {
         const isFav = window.currentFavorites && window.currentFavorites.some(addr => addr.trim() === currentAddr.trim());
         const favTag = isFav ? `<div class="fav-indicator" style="color:#e74c3c; font-size:12px; font-weight:bold;">❤️ אהבו את הנכס</div>` : '';
 
+        // נתוני העסקה הספציפיים לשיוך
+        const closingDate = p.closingDate || "";
+        const clientRole = p.clientRole || "BUYER";
+
         return `
-        <div class="assigned-prop" style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #2c3e50;">
-            <div style="flex-grow:1;">
-                <div style="font-weight:bold;">${currentAddr}</div>
-                <div style="font-size:12px; color:#666;">
-                    ${currentCity} | ₪${FinanceLogic.formatNumber(currentPrice)} | ${p.rooms || '?'} חד'
+        <div class="assigned-prop" style="display: flex; flex-direction: column; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #2c3e50;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="flex-grow:1;">
+                    <div style="font-weight:bold; font-size: 16px;">${currentAddr}</div>
+                    <div style="font-size:12px; color:#666;">
+                        ${currentCity} | ₪${FinanceLogic.formatNumber(currentPrice)} | ${p.rooms || '?'} חד'
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    ${favTag}
+                    <button onclick="window.remP(${i})" style="color:#e74c3c; background:none; border:1px solid #fed7d7; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">הסר</button>
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:15px;">
-                ${favTag}
-                <button onclick="window.remP(${i})" style="color:#e74c3c; background:none; border:1px solid #fed7d7; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">הסר</button>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
+                <div>
+                    <label style="font-size: 11px; margin-bottom: 3px;">תפקיד בעסקה:</label>
+                    <select onchange="window.updatePropRole(${i}, this.value)" style="padding: 5px; font-size: 12px; height: auto;">
+                        <option value="BUYER" ${clientRole === 'BUYER' ? 'selected' : ''}>🔑 קונה</option>
+                        <option value="SELLER" ${clientRole === 'SELLER' ? 'selected' : ''}>🏠 מוכר</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 11px; margin-bottom: 3px;">תאריך סגירה:</label>
+                    <input type="date" value="${closingDate}" onchange="window.updatePropDate(${i}, this.value)" style="padding: 4px; font-size: 12px; height: auto;">
+                </div>
             </div>
         </div>
         `;

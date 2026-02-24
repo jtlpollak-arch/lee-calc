@@ -1,3 +1,4 @@
+// dashboard-logic.js - מרכז שליטה חכם
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -37,6 +38,12 @@ async function initDashboard() {
         renderAIInsights(projects);
         renderHotProperties(projects);
         renderVisualRoadmap(projects);
+        
+        // --- הוספת לוגיקת ימי ההולדת החדשה ---
+        renderBirthdays(projects);
+
+        // --- הוספת לוגיקת ימי נישואין לנכס (מעודכן לרמת נכס) ---
+        renderAnniversaries(projects);
 
     } catch (error) {
         console.error("Dashboard Init Error:", error);
@@ -124,9 +131,10 @@ function runMatchmaker(projects, bank) {
             if (isAssigned) return;
 
             const budgetMatch = prop.price <= (proj.purchasePrice || Infinity);
+            const budgetCheck = proj.purchasePrice ? prop.price <= proj.purchasePrice : true;
             const floorMatch = proj.limitHighFloor ? prop.floor <= 4 : true;
 
-            if (budgetMatch && floorMatch) {
+            if (budgetCheck && floorMatch) {
                 matchCount++;
                 const div = document.createElement('div');
                 div.className = "alert-item alert-success";
@@ -203,6 +211,149 @@ function renderVisualRoadmap(projects) {
             `).join('')}
         </div>
     `;
+}
+
+// --- פונקציית ימי הולדת מתוקנת ---
+
+function renderBirthdays(projects) {
+    const container = document.getElementById('birthday-container');
+    const section = document.getElementById('birthday-section');
+    const countElem = document.getElementById('count-birthdays');
+    
+    if (!container || !section) return;
+
+    const today = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(today.getDate() + 14); // בדיקה לשבועיים קדימה
+
+    const upcoming = projects.filter(p => {
+        if (!p.clientBirthday) return false;
+        
+        const bday = new Date(p.clientBirthday);
+        const nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+        
+        if (nextBday < today.setHours(0,0,0,0)) {
+            nextBday.setFullYear(today.getFullYear() + 1);
+        }
+        
+        return nextBday <= targetDate;
+    }).sort((a, b) => {
+        const bdayA = new Date(a.clientBirthday);
+        const bdayB = new Date(b.clientBirthday);
+        const nextA = new Date(today.getFullYear(), bdayA.getMonth(), bdayA.getDate());
+        const nextB = new Date(today.getFullYear(), bdayB.getMonth(), bdayB.getDate());
+        if (nextA < today.setHours(0,0,0,0)) nextA.setFullYear(today.getFullYear() + 1);
+        if (nextB < today.setHours(0,0,0,0)) nextB.setFullYear(today.getFullYear() + 1);
+        return nextA - nextB;
+    });
+
+    if (countElem) countElem.innerText = upcoming.length;
+
+    if (upcoming.length === 0) {
+        section.style.display = 'none';
+    } else {
+        section.style.display = 'block';
+        container.innerHTML = upcoming.map(p => {
+            const bday = new Date(p.clientBirthday);
+            const displayDate = `${bday.getDate()}/${bday.getMonth() + 1}`;
+            
+            // ניקוי מספר הטלפון מתווים שאינם ספרות והוספת קידומת בינלאומית
+            const cleanPhone = p.clientPhone ? p.clientPhone.replace(/\D/g, '') : '';
+            const finalPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+
+            const waMsg = encodeURIComponent(`היי ${p.clientName}, המון מזל טוב ליום ההולדת! מאחלת לך שנה של התחלות חדשות ובית חם. לי אטדגי.`);
+            
+            return `
+                <div class="bday-card">
+                    <div class="bday-icon">🎈</div>
+                    <div class="bday-name">${p.clientName}</div>
+                    <div class="bday-date">${displayDate}</div>
+                    <button class="btn-wa" onclick="window.open('https://wa.me/${finalPhone}?text=${waMsg}', '_blank')">
+                        שלחי ברכה 💬
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+// --- פונקציה מעודכנת: ימי נישואין לנכס (חיפוש בתוך מערך הנכסים של הלקוח) ---
+
+function renderAnniversaries(projects) {
+    // 1. איתור האלמנטים ב-HTML - וודאי שה-IDs האלו קיימים ב-dashboard.html
+    const container = document.getElementById('anniversary-container');
+    const section = document.getElementById('anniversary-section');
+    const countElem = document.getElementById('count-anniversaries');
+    
+    // אם האלמנטים לא קיימים בדף, הפונקציה תעצור כאן ולא תעשה שגיאה
+    if (!container || !section) {
+        console.warn("אלמנטי יום נישואין לא נמצאו ב-HTML");
+        return;
+    }
+
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    let totalAnniversaries = 0;
+    let htmlContent = "";
+
+    projects.forEach(proj => {
+        // סריקה של כל הנכסים המשויכים לכל לקוח
+        if (proj.properties && Array.isArray(proj.properties)) {
+            proj.properties.forEach(prop => {
+                // בדיקה אם לנכס הספציפי יש תאריך סגירה
+                if (prop.closingDate) {
+                    // תיקון פורמט התאריך למניעת בעיות אזורי זמן
+                    const dateString = prop.closingDate.replace(/-/g, '/');
+                    const cDate = new Date(dateString);
+                    
+                    // בדיקה אם חודש הסגירה הוא החודש הנוכחי
+                    if (!isNaN(cDate.getTime()) && cDate.getMonth() === currentMonth) {
+                        const years = currentYear - cDate.getFullYear();
+                        
+                        // הצגת התראה רק אם עברה לפחות שנה
+                        if (years >= 1) {
+                            totalAnniversaries++;
+
+                            const cleanPhone = proj.clientPhone ? proj.clientPhone.replace(/\D/g, '') : '';
+                            const finalPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
+                            
+                            const roleText = prop.clientRole === 'SELLER' ? 'מכרתם את הנכס ב-' : 'קניתם את הבית ב-';
+                            const waMsg = encodeURIComponent(`היי ${proj.clientName}, בדיוק קפצה לי תזכורת שעברה ${years > 1 ? years + ' שנים' : 'שנה'} מאז ש${roleText}${prop.address}! מקווה שהכל מצוין. לי אטדגי.`);
+
+                            htmlContent += `
+                                <div class="alert-item alert-info" style="border-right-color: #3498db; background: #f0f7ff; margin-bottom: 10px; display: block; overflow: hidden;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px;">
+                                        <div style="flex-grow: 1;">
+                                            <strong style="color: #2c3e50;">🏠 יום נישואין לנכס: ${proj.clientName}</strong><br>
+                                            <span style="font-size:12px; color:#555;">${prop.address} (לפני ${years} שנים)</span>
+                                        </div>
+                                        <button class="btn-wa" style="width:auto; padding:8px 15px; background:#3498db; border:none; color:white; border-radius:6px; cursor:pointer; white-space:nowrap; font-size: 13px;" 
+                                            onclick="window.open('https://wa.me/${finalPhone}?text=${waMsg}', '_blank')">
+                                            שלחי ברכה 💬
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // עדכון המונה בכרטיס הסטטיסטיקה
+    if (countElem) countElem.innerText = totalAnniversaries;
+
+    // הצגה או הסתרה של כל הסקציה בהתאם לתוצאות
+    if (totalAnniversaries === 0) {
+        section.style.display = 'none';
+        container.innerHTML = "";
+    } else {
+        section.style.display = 'block';
+        container.innerHTML = htmlContent;
+    }
 }
 
 initDashboard();
