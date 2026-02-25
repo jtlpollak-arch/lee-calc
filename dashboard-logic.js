@@ -42,7 +42,7 @@ async function initDashboard() {
         // --- הוספת לוגיקת ימי ההולדת החדשה ---
         renderBirthdays(projects);
 
-        // --- הוספת לוגיקת ימי נישואין לנכס (מעודכן לרמת נכס) ---
+        // --- הוספת לוגיקת יום השנה לעסקה (מעודכן לרמת נכס) ---
         renderAnniversaries(projects);
 
     } catch (error) {
@@ -51,14 +51,22 @@ async function initDashboard() {
 }
 
 function updateTopStats(projects, bank) {
-    document.getElementById('count-active').innerText = projects.filter(p => p.status !== 'DONE' && p.status !== 'CANCELLED').length;
+    // עדכון מונה תיקים פעילים
+    const activeElem = document.getElementById('count-active');
+    if (activeElem) {
+        activeElem.innerText = projects.filter(p => p.status !== 'DONE' && p.status !== 'CANCELLED').length;
+    }
     
-    const assignedIds = new Set();
-    projects.forEach(p => {
-        if (p.properties) p.properties.forEach(prop => assignedIds.add(prop.propertyId || prop.id));
-    });
-    const unassignedCount = bank.filter(b => !assignedIds.has(b.id)).length;
-    document.getElementById('count-unsold').innerText = unassignedCount;
+    // עדכון מונה נכסים ללא שיוך
+    const unsoldElem = document.getElementById('count-unsold');
+    if (unsoldElem) {
+        const assignedIds = new Set();
+        projects.forEach(p => {
+            if (p.properties) p.properties.forEach(prop => assignedIds.add(prop.propertyId || prop.id));
+        });
+        const unassignedCount = bank.filter(b => !assignedIds.has(b.id)).length;
+        unsoldElem.innerText = unassignedCount;
+    }
 }
 
 function renderUrgentAlerts(projects) {
@@ -96,7 +104,9 @@ function renderUrgentAlerts(projects) {
         }
     });
 
-    document.getElementById('count-followup').innerText = followUpCount;
+    const followUpElem = document.getElementById('count-followup');
+    if (followUpElem) followUpElem.innerText = followUpCount;
+    
     if (container.innerHTML === "") container.innerHTML = "<p>אין התראות דחופות כרגע. הכל בשליטה!</p>";
 }
 
@@ -148,7 +158,9 @@ function runMatchmaker(projects, bank) {
         });
     });
 
-    document.getElementById('count-match').innerText = matchCount;
+    const matchElem = document.getElementById('count-match');
+    if (matchElem) matchElem.innerText = matchCount;
+    
     if (container.innerHTML === "") container.innerHTML = "<p>לא נמצאו שידוכים חדשים כרגע.</p>";
 }
 
@@ -213,7 +225,7 @@ function renderVisualRoadmap(projects) {
     `;
 }
 
-// --- פונקציית ימי הולדת מתוקנת ---
+// --- פונקציית ימי הולדת משופרת עם הפרדה ויזואלית ---
 
 function renderBirthdays(projects) {
     const container = document.getElementById('birthday-container');
@@ -223,51 +235,57 @@ function renderBirthdays(projects) {
     if (!container || !section) return;
 
     const today = new Date();
-    const targetDate = new Date();
-    targetDate.setDate(today.getDate() + 14); // בדיקה לשבועיים קדימה
+    const currentMonth = today.getMonth();
+    const currentDate = today.getDate();
 
-    const upcoming = projects.filter(p => {
-        if (!p.clientBirthday) return false;
+    const todayCelebs = [];
+    const upcomingCelebs = [];
+
+    projects.forEach(p => {
+        if (!p.clientBirthday) return;
         
-        const bday = new Date(p.clientBirthday);
-        const nextBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-        
-        if (nextBday < today.setHours(0,0,0,0)) {
-            nextBday.setFullYear(today.getFullYear() + 1);
+        const bdayDate = new Date(p.clientBirthday.replace(/-/g, '/'));
+        if (isNaN(bdayDate.getTime())) return;
+
+        if (bdayDate.getMonth() === currentMonth && bdayDate.getDate() === currentDate) {
+            todayCelebs.push(p);
+        } else {
+            const nextBday = new Date(today.getFullYear(), bdayDate.getMonth(), bdayDate.getDate());
+            if (nextBday < new Date().setHours(0,0,0,0)) {
+                nextBday.setFullYear(today.getFullYear() + 1);
+            }
+            
+            const diffTime = nextBday - new Date().setHours(0,0,0,0);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 0 && diffDays <= 14) {
+                upcomingCelebs.push({...p, daysLeft: diffDays, bdayDate: bdayDate});
+            }
         }
-        
-        return nextBday <= targetDate;
-    }).sort((a, b) => {
-        const bdayA = new Date(a.clientBirthday);
-        const bdayB = new Date(b.clientBirthday);
-        const nextA = new Date(today.getFullYear(), bdayA.getMonth(), bdayA.getDate());
-        const nextB = new Date(today.getFullYear(), bdayB.getMonth(), bdayB.getDate());
-        if (nextA < today.setHours(0,0,0,0)) nextA.setFullYear(today.getFullYear() + 1);
-        if (nextB < today.setHours(0,0,0,0)) nextB.setFullYear(today.getFullYear() + 1);
-        return nextA - nextB;
     });
 
-    if (countElem) countElem.innerText = upcoming.length;
+    const totalCount = todayCelebs.length + upcomingCelebs.length;
+    if (countElem) countElem.innerText = totalCount;
 
-    if (upcoming.length === 0) {
+    if (totalCount === 0) {
         section.style.display = 'none';
-    } else {
-        section.style.display = 'block';
-        container.innerHTML = upcoming.map(p => {
-            const bday = new Date(p.clientBirthday);
-            const displayDate = `${bday.getDate()}/${bday.getMonth() + 1}`;
-            
-            // ניקוי מספר הטלפון מתווים שאינם ספרות והוספת קידומת בינלאומית
+        return;
+    }
+
+    section.style.display = 'block';
+    let html = "";
+
+    if (todayCelebs.length > 0) {
+        html += `<div class="bday-group-title">🎉 חוגגים ממש היום!</div>`;
+        html += todayCelebs.map(p => {
             const cleanPhone = p.clientPhone ? p.clientPhone.replace(/\D/g, '') : '';
             const finalPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
-
-            const waMsg = encodeURIComponent(`היי ${p.clientName}, המון מזל טוב ליום ההולדת! מאחלת לך שנה של התחלות חדשות ובית חם. לי אטדגי.`);
+            const waMsg = encodeURIComponent(`היי ${p.clientName}, המון מזל טוב ליום ההולדת! 🎂 מאחלת לך שנה נפלאה, מלאה בבתים שמחים ובשורות טובות. לי אטדגי.`);
             
             return `
-                <div class="bday-card">
-                    <div class="bday-icon">🎈</div>
-                    <div class="bday-name">${p.clientName}</div>
-                    <div class="bday-date">${displayDate}</div>
+                <div class="bday-card bday-today">
+                    <div class="bday-icon">🎂</div>
+                    <span class="bday-name">${p.clientName}</span>
                     <button class="btn-wa" onclick="window.open('https://wa.me/${finalPhone}?text=${waMsg}', '_blank')">
                         שלחי ברכה 💬
                     </button>
@@ -275,19 +293,32 @@ function renderBirthdays(projects) {
             `;
         }).join('');
     }
+
+    if (upcomingCelebs.length > 0) {
+        html += `<div class="bday-group-title">🎈 בקרוב (בשבועיים הקרובים)</div>`;
+        html += upcomingCelebs.sort((a,b) => a.daysLeft - b.daysLeft).map(p => {
+            const displayDate = `${p.bdayDate.getDate()}/${p.bdayDate.getMonth() + 1}`;
+            return `
+                <div class="bday-card">
+                    <div class="bday-icon">🎁</div>
+                    <span class="bday-name">${p.clientName}</span>
+                    <span class="bday-date">חל ב-${displayDate}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    container.innerHTML = html;
 }
 
-// --- פונקציה מעודכנת: ימי נישואין לנכס (חיפוש בתוך מערך הנכסים של הלקוח) ---
+// --- פונקציה מעודכנת: יום השנה לעסקה (חיפוש בתוך מערך הנכסים של הלקוח) ---
 
 function renderAnniversaries(projects) {
-    // 1. איתור האלמנטים ב-HTML - וודאי שה-IDs האלו קיימים ב-dashboard.html
     const container = document.getElementById('anniversary-container');
     const section = document.getElementById('anniversary-section');
     const countElem = document.getElementById('count-anniversaries');
     
-    // אם האלמנטים לא קיימים בדף, הפונקציה תעצור כאן ולא תעשה שגיאה
     if (!container || !section) {
-        console.warn("אלמנטי יום נישואין לא נמצאו ב-HTML");
         return;
     }
 
@@ -299,20 +330,14 @@ function renderAnniversaries(projects) {
     let htmlContent = "";
 
     projects.forEach(proj => {
-        // סריקה של כל הנכסים המשויכים לכל לקוח
         if (proj.properties && Array.isArray(proj.properties)) {
             proj.properties.forEach(prop => {
-                // בדיקה אם לנכס הספציפי יש תאריך סגירה
                 if (prop.closingDate) {
-                    // תיקון פורמט התאריך למניעת בעיות אזורי זמן
                     const dateString = prop.closingDate.replace(/-/g, '/');
                     const cDate = new Date(dateString);
                     
-                    // בדיקה אם חודש הסגירה הוא החודש הנוכחי
                     if (!isNaN(cDate.getTime()) && cDate.getMonth() === currentMonth) {
                         const years = currentYear - cDate.getFullYear();
-                        
-                        // הצגת התראה רק אם עברה לפחות שנה
                         if (years >= 1) {
                             totalAnniversaries++;
 
@@ -320,13 +345,13 @@ function renderAnniversaries(projects) {
                             const finalPhone = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
                             
                             const roleText = prop.clientRole === 'SELLER' ? 'מכרתם את הנכס ב-' : 'קניתם את הבית ב-';
-                            const waMsg = encodeURIComponent(`היי ${proj.clientName}, בדיוק קפצה לי תזכורת שעברה ${years > 1 ? years + ' שנים' : 'שנה'} מאז ש${roleText}${prop.address}! מקווה שהכל מצוין. לי אטדגי.`);
+                            const waMsg = encodeURIComponent(`היי ${proj.clientName}, בדיוק קפצה לי תזכורת שעברו ${years > 1 ? years + ' שנים' : 'שנה'} מאז ש${roleText}${prop.address}! מקווה שהכל מצוין. לי אטדגי.`);
 
                             htmlContent += `
                                 <div class="alert-item alert-info" style="border-right-color: #3498db; background: #f0f7ff; margin-bottom: 10px; display: block; overflow: hidden;">
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px;">
                                         <div style="flex-grow: 1;">
-                                            <strong style="color: #2c3e50;">🏠 יום נישואין לנכס: ${proj.clientName}</strong><br>
+                                            <strong style="color: #2c3e50;">📅 יום השנה לעסקה: ${proj.clientName}</strong><br>
                                             <span style="font-size:12px; color:#555;">${prop.address} (לפני ${years} שנים)</span>
                                         </div>
                                         <button class="btn-wa" style="width:auto; padding:8px 15px; background:#3498db; border:none; color:white; border-radius:6px; cursor:pointer; white-space:nowrap; font-size: 13px;" 
@@ -343,10 +368,8 @@ function renderAnniversaries(projects) {
         }
     });
 
-    // עדכון המונה בכרטיס הסטטיסטיקה
     if (countElem) countElem.innerText = totalAnniversaries;
 
-    // הצגה או הסתרה של כל הסקציה בהתאם לתוצאות
     if (totalAnniversaries === 0) {
         section.style.display = 'none';
         container.innerHTML = "";

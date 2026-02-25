@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>מרכז שליטה חכם | לי אטדגי</title>
     <style>
-        :root { --gold: #FFD700; --dark: #2c3e50; --light: #f4f7f9; --urgent: #e74c3c; --success: #27ae60; --bday: #e67e22; }
+        :root { --gold: #FFD700; --dark: #2c3e50; --light: #f4f7f9; --urgent: #e74c3c; --success: #27ae60; --bday: #e67e22; --info: #3498db; }
         body { background: var(--light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: auto; }
         
@@ -31,7 +31,7 @@
         .alert-item { background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); margin-bottom: 12px; border-right: 5px solid #ddd; transition: 0.2s; position: relative; }
         .alert-item:hover { transform: translateX(-5px); background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
         .alert-urgent { border-right-color: var(--urgent); background: #fff5f5; }
-        .alert-info { border-right-color: #3498db; }
+        .alert-info { border-right-color: var(--info); }
         .alert-success { border-right-color: var(--success); }
 
         .btn-view { background: var(--dark); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; float: left; transition: 0.3s; }
@@ -47,11 +47,49 @@
         .btn-main:hover { background: white; }
 
         /* Birthday Widget Styles */
-        .bday-card { border-radius: 10px; padding: 12px; text-align: center; background: white; border: 1px solid var(--gold); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .bday-icon { font-size: 22px; margin-bottom: 5px; }
-        .bday-name { font-weight: bold; font-size: 14px; color: var(--dark); }
+        .bday-card { border-radius: 12px; padding: 15px; text-align: center; background: white; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.3s; }
+        
+        /* עיצוב מיוחד ליום הולדת שחל היום */
+        .bday-today { 
+            background: linear-gradient(135deg, #fff9e6 0%, #fff 100%);
+            border: 2px solid var(--gold) !important;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+            transform: scale(1.03);
+            position: relative;
+        }
+        .bday-today::after {
+            content: "🥳 היום!";
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: var(--gold);
+            color: var(--dark);
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bday-icon { font-size: 24px; margin-bottom: 5px; }
+        .bday-name { font-weight: bold; font-size: 15px; color: var(--dark); display: block; margin-bottom: 4px; }
         .bday-date { font-size: 12px; color: var(--bday); font-weight: bold; }
-        .btn-wa { margin-top: 8px; background: #25d366; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; }
+        
+        .btn-wa { margin-top: 10px; background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; transition: 0.2s; }
+        .btn-wa:hover { background: #1ebe57; transform: translateY(-2px); }
+
+        /* כותרות הפרדה בתוך הווידג'ט */
+        .bday-group-title {
+            grid-column: 1 / -1;
+            font-size: 13px;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin: 10px 0 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .bday-group-title::after { content: ""; flex-grow: 1; height: 1px; background: #eee; }
     </style>
 </head>
 <body>
@@ -83,26 +121,26 @@
             <h2 id="count-birthdays">0</h2>
             <p>חוגגים (השבוע/הבא)</p>
         </div>
+        <div class="stat-card" style="border-bottom-color: var(--info);">
+            <h2 id="count-anniversaries">0</h2>
+            <p>יום השנה לעסקה (החודש)</p>
+        </div>
         <div class="stat-card">
             <h2 id="count-match" style="color:var(--success);">0</h2>
             <p>שידוכי AI פוטנציאליים</p>
-        </div>
-        <div class="stat-card">
-            <h2 id="count-unsold">0</h2>
-            <p>נכסים ללא שיוך בבנק</p>
         </div>
     </div>
 
     <div class="dashboard-layout">
         <div class="main-content">
-            <div class="card" id="anniversary-section" style="display:none;">
-                <div class="section-title">🏠 ימי נישואין לנכס</div>
+            <div class="card" id="anniversary-section" style="display:none; background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%); border-right: 5px solid var(--info);">
+                <div class="section-title">📅 יום השנה לעסקה (שימור קשר)</div>
                 <div id="anniversary-container"></div>
             </div>
 
-            <div class="card" id="birthday-section" style="display:none; background: linear-gradient(135deg, #fffcf0 0%, #fff 100%); border: 1px solid var(--gold);">
-                <div class="section-title">🎂 ימי הולדת קרובים (התארגנות וברכות)</div>
-                <div id="birthday-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;">
+            <div class="card" id="birthday-section" style="display:none; border: 1px solid var(--gold);">
+                <div class="section-title">🎂 ימי הולדת (חגיגות ומעקב)</div>
+                <div id="birthday-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px;">
                     </div>
             </div>
 
