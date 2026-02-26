@@ -81,7 +81,7 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { FinanceLogic } from './shared.js';
 
         const priceInput = document.getElementById('p-price');
@@ -92,6 +92,9 @@
 
         document.getElementById('btn-save-bank').onclick = async () => {
             const editId = document.getElementById('edit-id').value;
+            // שימוש ב-ISOString כגיבוי וב-serverTimestamp כשדה המרכזי
+            const nowIso = new Date().toISOString();
+            
             const data = {
                 address: document.getElementById('p-address').value,
                 price: FinanceLogic.cleanNumber(document.getElementById('p-price').value),
@@ -99,7 +102,9 @@
                 floor: document.getElementById('p-floor').value,
                 sqm: document.getElementById('p-sqm').value,
                 link: document.getElementById('p-link').value,
-                updatedAt: new Date().toISOString()
+                // תיקון: שימוש ב-nowIso שהוגדר למעלה
+                lastUpdated: nowIso,
+                aaaaa : "aaaaaa"
             };
 
             if(!data.address || !data.price) return alert("נא למלא כתובת ומחיר");
@@ -110,12 +115,14 @@
                     document.getElementById('edit-id').value = "";
                     document.getElementById('form-title').innerText = "הוסיפי נכס חדש למאגר";
                 } else {
+                    // תיקון: הוספת timestamp ביצירה חדשה
+                    data.timestamp = nowIso; 
                     await addDoc(collection(db, "property_bank"), data);
                 }
                 
                 document.querySelectorAll('input').forEach(i => i.value = "");
                 alert("המאגר עודכן בהצלחה!");
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error(e); alert("שגיאה: " + e.message); }
         };
 
         onSnapshot(collection(db, "property_bank"), (snap) => {

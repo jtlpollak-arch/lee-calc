@@ -21,11 +21,20 @@ const ROADMAP_STEPS = {
 };
 
 const switchTab = (target) => {
+    // הסרת מחלקת active מכל התכנים
     document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+    // הסרת מחלקת active מכל הכפתורים
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`section-${target}`).classList.add('active');
-    document.getElementById(`btn-show-${target}`).classList.add('active');
+    
+    // הפעלת התוכן והכפתור הנבחר
+    const targetSection = document.getElementById(`section-${target}`);
+    const targetBtn = document.getElementById(`btn-show-${target}`);
+    
+    if (targetSection) targetSection.classList.add('active');
+    if (targetBtn) targetBtn.classList.add('active');
 };
+
+document.getElementById('btn-show-today').onclick = () => switchTab('today');
 document.getElementById('btn-show-clients').onclick = () => switchTab('clients');
 document.getElementById('btn-show-props').onclick = () => switchTab('props');
 document.getElementById('btn-show-logs').onclick = () => switchTab('logs');

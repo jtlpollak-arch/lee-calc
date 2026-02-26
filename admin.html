@@ -190,6 +190,12 @@
             color: black;
             transform: translateY(-2px);
         }
+
+        #section-today iframe {
+            background: #000;
+            border: 1px solid #333;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
@@ -200,7 +206,8 @@
 
     <main class="main-container">
         <div class="tabs-nav">
-            <button class="tab-btn active" id="btn-show-clients">ניהול לקוחות</button>
+            <button class="tab-btn active" id="btn-show-today">היום שלי 🎯</button>
+            <button class="tab-btn" id="btn-show-clients">ניהול לקוחות</button>
             <button class="tab-btn" id="btn-show-props">בנק נכסים</button>
             <button class="tab-btn" id="btn-show-providers">נבחרת המומחים</button>
             <button class="tab-btn" id="btn-show-consults">בקשות ייעוץ 🔍</button>
@@ -208,7 +215,11 @@
             <button class="tab-btn" id="btn-show-settings">הגדרות מערכת</button>
         </div>
 
-        <div id="section-clients" class="section-content active">
+        <div id="section-today" class="section-content active">
+            <iframe src="today.html" style="width: 100%; height: 85vh; border: none; border-radius: 15px;"></iframe>
+        </div>
+
+        <div id="section-clients" class="section-content">
             <div class="admin-header">
                 <div style="display:flex; align-items:center; gap:15px;">
                     <h2 style="margin:0;">תיקי לקוחות</h2>
