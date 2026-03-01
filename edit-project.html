@@ -320,7 +320,17 @@
     // פונקציית עזר לעדכון התאריך במערך הנכסים בזיכרון
     window.updatePropDate = (index, value) => {
         if (window.currentProperties && window.currentProperties[index]) {
+            const now = new Date().toISOString();
             window.currentProperties[index].closingDate = value;
+            
+            // הוספת חותמת זמן לנכס הספציפי בתוך המערך
+            window.currentProperties[index].lastUpdated = now;
+            
+            // אם אין לו עדיין תאריך יצירה (שיוך), ניתן לו אחד
+            if (!window.currentProperties[index].timestamp) {
+                window.currentProperties[index].timestamp = now;
+            }
+
             // הפעלת דגל השינויים
             window.hasUnsavedChanges = true;
             document.getElementById('save-status').style.display = 'block';

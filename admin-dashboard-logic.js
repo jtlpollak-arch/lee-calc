@@ -101,13 +101,13 @@ if (saveProviderBtn) {
             alert("שגיאה בשמירת איש המקצוע");
         }
     };
-	
-	const provPhoneField = document.getElementById('prov-phone');
-	if (provPhoneField) {
-		provPhoneField.oninput = (e) => {
-			e.target.value = FinanceLogic.formatPhone(e.target.value);
-		};
-	}
+    
+    const provPhoneField = document.getElementById('prov-phone');
+    if (provPhoneField) {
+        provPhoneField.oninput = (e) => {
+            e.target.value = FinanceLogic.formatPhone(e.target.value);
+        };
+    }
 }
 
 window.delProvider = async (id, name) => {
@@ -573,7 +573,7 @@ onSnapshot(collection(db, "projects"), (snap) => {
                 const clientPortalUrl = `${window.location.origin}/client.html?id=${d.id}`;
 
                 // תיקון התצוגה בעברית: שימוש ב-FinanceLogic.STATUSES
-				tbody.innerHTML += `<tr>
+                tbody.innerHTML += `<tr>
                     <td style="vertical-align: top; font-weight: bold;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             ${urgentUI}${d.clientName}
@@ -734,6 +734,9 @@ document.getElementById('save-prop-to-db').onclick = async () => {
     const linkRaw = document.getElementById('p-link').value;
     const linkArray = linkRaw.split('\n').map(l => l.trim()).filter(l => l !== "");
 
+    // יצירת חותמת זמן
+    const now = new Date().toISOString();
+
     const data = { 
         address: document.getElementById('p-address').value, 
         propertyType: document.getElementById('p-type').value,
@@ -752,10 +755,20 @@ document.getElementById('save-prop-to-db').onclick = async () => {
         scoreTrans: parseFloat(document.getElementById('p-scoreTrans').value) || 0,
         scoreLeisure: parseFloat(document.getElementById('p-scoreLeisure').value) || 0,
         scoreSea: parseFloat(document.getElementById('p-scoreSea').value) || 0,
-        distSea: parseFloat(document.getElementById('p-distSea').value) || 0
+        distSea: parseFloat(document.getElementById('p-distSea').value) || 0,
+        
+        // הוספת השדה שביקשת
+        lastUpdated: now
     };
-    if (id) await updateDoc(doc(db, "property_bank", id), data);
-    else await addDoc(collection(db, "property_bank"), data);
+
+    if (id) {
+        await updateDoc(doc(db, "property_bank", id), data);
+    } else {
+        // הוספת תאריך יצירה לנכס חדש
+        data.timestamp = now;
+        await addDoc(collection(db, "property_bank"), data);
+    }
+
     await logAction(`עודכנו פרטי נכס: ${data.address}`);
     document.getElementById('prop-modal').style.display = 'none';
 };

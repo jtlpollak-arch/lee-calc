@@ -215,12 +215,32 @@ document.getElementById('btn-save-all').onclick = async () => {
         lastUpdated: new Date().toISOString()
     };
 
+    const now = new Date().toISOString();
+    // בדיקה אם קיים כבר timestamp ללקוח, אם לא - הוספה שלו (תאריך יצירה)
+    try {
+        const snap = await getDoc(doc(db, "projects", clientID));
+        if (snap.exists() && !snap.data().timestamp) {
+            data.timestamp = now;
+        }
+    } catch (e) { console.log("Timestamp check failed"); }
+
     if (newRoadmapStep) {
         data.roadmapStep = newRoadmapStep;
     }
     
     try {
         await updateDoc(doc(db, "projects", clientID), data);
+        
+        // עדכון בנק הנכסים המרכזי לכל נכס ששונה בתיק כדי להוסיף את חותמת הזמן
+        for (const prop of currentProperties) {
+            const propId = prop.propertyId || prop.id;
+            if (propId) {
+                await updateDoc(doc(db, "property_bank", propId), {
+                    lastUpdated: now
+                });
+            }
+        }
+
         let logMsg = `✨ עודכן תיק לקוח: ${data.clientName} (סטטוס: ${currentStatus})`;
         if (data.isNotesUrgent) logMsg += " [סומן כדחוף ⚠️]";
         await logAction(logMsg);
@@ -240,6 +260,8 @@ document.getElementById('btn-save-all').onclick = async () => {
 window.updatePropDate = (index, value) => {
     if (currentProperties[index]) {
         currentProperties[index].closingDate = value;
+        // הוספת חותמת זמן לעדכון פנימי של הנכס
+        currentProperties[index].lastUpdated = new Date().toISOString();
         markChanged();
     }
 };
@@ -247,6 +269,8 @@ window.updatePropDate = (index, value) => {
 window.updatePropRole = (index, value) => {
     if (currentProperties[index]) {
         currentProperties[index].clientRole = value;
+        // הוספת חותמת זמן לעדכון פנימי של הנכס
+        currentProperties[index].lastUpdated = new Date().toISOString();
         markChanged();
     }
 };
@@ -413,12 +437,17 @@ if (confirmBtn) {
             return;
         }
 
+        const now = new Date().toISOString();
+
         selectedIDs.forEach(id => {
             const propData = allBankProperties.find(p => p.id === id);
             if (propData) {
                 const propWithId = { 
                     ...propData, 
-                    propertyId: id 
+                    propertyId: id,
+                    // הוספת חותמת זמן לשיוך החדש בתוך הלקוח
+                    timestamp: now,
+                    lastUpdated: now
                 };
                 currentProperties.push(propWithId);
             }
