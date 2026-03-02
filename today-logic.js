@@ -310,19 +310,34 @@ window.saveEventToGoogle = async () => {
         return;
     }
 
-    const startDateTime = `${date}T${time}:00`;
-    const endDateTime = new Date(new Date(startDateTime).getTime() + 60*60*1000).toISOString().split('.')[0]; 
+    // --- התיקון כאן: יצירת אובייקטי זמן תקינים ---
+    const startDateTime = new Date(`${date}T${time}:00`);
+    
+    // בדיקה שהזמן תקין
+    if (isNaN(startDateTime.getTime())) {
+        alert("התאריך או השעה שהוזנו אינם תקינים.");
+        return;
+    }
+
+    // יצירת זמן סיום (שעה אחת אחרי ההתחלה)
+    const endDateTime = new Date(startDateTime.getTime() + (60 * 60 * 1000));
 
     const event = {
         'summary': `${type}: ${title}`,
-        'location': location, // שדה המיקום החדש
+        'location': location,
         'description': `נוצר דרך מרכז הפיקוד של לי אטדגי`,
-        'start': { 'dateTime': startDateTime, 'timeZone': 'Asia/Jerusalem' },
-        'end': { 'dateTime': endDateTime, 'timeZone': 'Asia/Jerusalem' }
+        'start': { 
+            'dateTime': startDateTime.toISOString(), 
+            'timeZone': 'Asia/Jerusalem' 
+        },
+        'end': { 
+            'dateTime': endDateTime.toISOString(), 
+            'timeZone': 'Asia/Jerusalem' 
+        }
     };
 
     try {
-        await gapi.client.calendar.events.insert({
+        const response = await gapi.client.calendar.events.insert({
             'calendarId': 'primary',
             'resource': event
         });
@@ -331,7 +346,9 @@ window.saveEventToGoogle = async () => {
         listUpcomingEvents(); 
     } catch (err) {
         console.error("Error creating event:", err);
-        alert("שגיאה ביצירת האירוע. וודאי שיש לך הרשאות כתיבה.");
+        // הצגת השגיאה הספציפית מהשרת
+        const errorMsg = err.result?.error?.message || "וודאי שיש לך הרשאות כתיבה.";
+        alert("שגיאה ביצירת האירוע: " + errorMsg);
     }
 };
 
