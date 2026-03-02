@@ -33,7 +33,7 @@
     <div id="event-modal" class="modal px-4">
         <div class="modal-content shadow-2xl">
             <h3 class="text-xl font-bold gold-text mb-6 flex items-center gap-2"><span>📅</span> קביעת אירוע חדש</h3>
-            <div class="space-y-4 text-right">
+            <div class="space-y-4">
                 <div>
                     <label class="text-[10px] text-gray-400 block mb-1">סוג האירוע</label>
                     <select id="event-type" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
@@ -45,19 +45,19 @@
                 </div>
                 <div>
                     <label class="text-[10px] text-gray-400 block mb-1">שם הלקוח / תיאור</label>
-                    <input type="text" id="event-title" placeholder="למשל: משפחת כהן" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500 text-white">
+                    <input type="text" id="event-title" placeholder="למשל: משפחת כהן" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
                 </div>
                 <div>
                     <label class="text-[10px] text-gray-400 block mb-1">מיקום האירוע</label>
-                    <input type="text" id="event-location" placeholder="כתובת הנכס או מקום הפגישה" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500 text-white">
+                    <input type="text" id="event-location" placeholder="כתובת הנכס או משרד" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[10px] text-gray-400 block mb-1 text-right">תאריך</label>
+                        <label class="text-[10px] text-gray-400 block mb-1">תאריך</label>
                         <input type="date" id="event-date" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
                     </div>
                     <div>
-                        <label class="text-[10px] text-gray-400 block mb-1 text-right">שעה</label>
+                        <label class="text-[10px] text-gray-400 block mb-1">שעה</label>
                         <input type="time" id="event-time" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
                     </div>
                 </div>
@@ -110,12 +110,12 @@
                         <button id="auth_button" onclick="handleAuthClick()" class="text-[10px] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full border border-blue-400/30 hover:bg-blue-600 hover:text-white transition-all">סנכרון</button>
                     </div>
                 </div>
-                <div id="calendar-content" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 text-sm italic text-gray-500 text-right">
+                <div id="calendar-content" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 text-sm italic text-gray-500">
                     טוען יומן...
                 </div>
             </div>
 
-            <div class="lg:col-span-5 space-y-6 text-right">
+            <div class="lg:col-span-5 space-y-6">
                 <div class="flex justify-between items-end">
                     <h2 class="text-xl font-bold italic">🎯 משימות קריטיות להיום</h2>
                     <span id="progress-text" class="text-[10px] gold-text font-bold">0% הושלמו</span>
@@ -127,22 +127,22 @@
                     </div>
                     <div id="tasks-list" class="space-y-3 min-h-[400px]"></div>
                     <div class="mt-8 pt-6 border-t border-gray-800 flex gap-2">
-                        <input type="text" id="new-task-input" placeholder="הוסיפי משימה מהירה..." class="flex-grow bg-black border border-gray-700 rounded-xl p-4 text-sm focus:border-yellow-500 outline-none text-white text-right">
+                        <input type="text" id="new-task-input" placeholder="הוסיפי משימה מהירה..." class="flex-grow bg-black border border-gray-700 rounded-xl p-4 text-sm focus:border-yellow-500 outline-none text-white">
                         <button id="add-task-btn" class="bg-yellow-500 text-black px-6 rounded-xl font-bold hover:bg-yellow-400 transition-all text-xs">הוספה</button>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-3 space-y-6 text-right">
+            <div class="lg:col-span-3 space-y-6">
                 <div class="space-y-3">
-                    <h2 class="text-sm font-bold gold-text flex items-center gap-2 justify-end">
+                    <h2 class="text-sm font-bold gold-text flex items-center gap-2">
                         <span>⚠️</span> לקוחות ללא תנועה (+3 ימים)
                     </h2>
                     <div id="stuck-clients-list" class="space-y-3 max-h-[40vh] overflow-y-auto pr-1"></div>
                 </div>
 
                 <div class="space-y-3 pt-6 border-t border-gray-800">
-                    <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2 justify-end">
+                    <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2">
                         <span>🏠</span> נכסים חדשים בבנק
                     </h2>
                     <div id="new-properties-list" class="space-y-3"></div>
