@@ -95,7 +95,7 @@ async function initToday() {
                 gisInitInternal(); 
             } else {
                 const calendarContent = document.getElementById('calendar-content');
-                if (calendarContent) calendarContent.innerHTML = `<div class="p-4 text-xs text-orange-400 italic">חסר הגדרות גוגל ב-Firebase</div>`;
+                if (calendarContent) calendarContent.innerHTML = `<div class="p-4 text-xs text-orange-400 italic text-right">חסר הגדרות גוגל ב-Firebase</div>`;
             }
         }
     } catch (e) {
@@ -158,10 +158,10 @@ async function fetchFirebaseData() {
             const bdayStatus = checkBirthdayStatus(data.clientBirthday);
             if (bdayStatus === 'today') {
                 bdayTodayCounter++;
-                const msg = `מזל טוב ${data.clientName} היקר/ה! יום הולדת שמח, המון הצלחה ואושר! 🎂`;
+                const msg = `מזל טוב ${data.clientName} היקר/ה! יום הולדת שמח! 🎂`;
                 bdayHtml += createTaskHTML(`🎈 יום הולדת היום: ${data.clientName}`, 'BIRTHDAY', clientId, clientPhone, msg);
             } else if (bdayStatus === 'tomorrow') {
-                const msgTomorrow = `היי ${data.clientName}, מחר יש לך יום הולדת! רציתי להקדים ולברך במזל טוב...`;
+                const msgTomorrow = `היי ${data.clientName}, מחר יום הולדת!`;
                 bdayHtml += createTaskHTML(`⏳ מחר יום הולדת: ${data.clientName}`, 'TOMORROW_BDAY', clientId, clientPhone, msgTomorrow);
             }
 
@@ -171,12 +171,12 @@ async function fetchFirebaseData() {
                 let price = parseFloat(String(data.salePrice || data.dealPrice || 0).replace(/[^\d.]/g, '')) || 0;
                 let rate = parseFloat(data.brokerageRatePurch || 2);
                 if (price > 0) totalRevenueSum += (price * (rate / 100));
-                generalTasksHtml += createTaskHTML(`🖊️ חוזה בחתימה: ${data.clientName}`, 'SIGNING', clientId, clientPhone, `היי ${data.clientName}, רציתי להתעדכן לגבי התקדמות החוזה.`);
+                generalTasksHtml += createTaskHTML(`🖊️ חוזה בחתימה: ${data.clientName}`, 'SIGNING', clientId, clientPhone, `מה עם החוזה?`);
             }
 
             // 3. משימות מעקב (Follow-up)
             if (data.followUpDate && data.followUpDate <= todayStr && data.status !== 'DONE' && data.status !== 'CANCELLED') {
-                generalTasksHtml += createTaskHTML(`📞 שיחת מעקב: ${data.clientName}`, 'FOLLOWUP', clientId, clientPhone, `היי ${data.clientName}, רציתי לשמוע אם יש חדש.`);
+                generalTasksHtml += createTaskHTML(`📞 מעקב: ${data.clientName}`, 'FOLLOWUP', clientId, clientPhone, `רציתי להתעדכן.`);
             }
 
             // 4. זיהוי לקוחות "תקועים" (+3 ימים ללא עדכון)
@@ -187,10 +187,10 @@ async function fetchFirebaseData() {
                     const diffDays = Math.ceil(Math.abs(now - lastDate) / (1000 * 60 * 60 * 24));
                     let bColor = diffDays >= 14 ? "border-red-600" : (diffDays >= 7 ? "border-orange-600" : "border-yellow-600");
                     stuckHtml += `
-                        <div class="dark-card p-4 rounded-xl border-r-4 ${bColor} flex justify-between items-center mb-3 text-right transition-all">
+                        <div class="dark-card p-4 rounded-xl border-r-4 ${bColor} flex justify-between items-center mb-3 text-right">
                             <div>
                                 <div class="text-white font-bold text-sm text-right">${data.clientName}</div>
-                                <div class="text-[10px] text-gray-500 italic text-right">לא עודכן ${diffDays} ימים</div>
+                                <div class="text-[10px] text-gray-500 italic text-right">ללא עדכון ${diffDays} ימים</div>
                             </div>
                             <a href="https://wa.me/${clientPhone.replace(/\D/g, '')}" target="_blank" class="bg-green-500/10 p-2 rounded-full text-xs hover:bg-green-500 transition-all">💬</a>
                         </div>`;
@@ -205,11 +205,11 @@ async function fetchFirebaseData() {
         
         // עדכון רשימת תקועים
         if (stuckList) {
-            stuckList.innerHTML = stuckHtml || `<div class="text-green-500/50 text-[10px] italic text-right">הכל מטופל ומתוקתק! ✨</div>`;
+            stuckList.innerHTML = stuckHtml || `<div class="text-green-500/50 text-[10px] italic text-right">הכל מטופל! ✨</div>`;
         }
         
         // עדכון רשימת משימות ראשית
-        tasksList.innerHTML = (bdayHtml + generalTasksHtml) || `<div class="text-gray-600 text-center py-12 italic text-sm">אין משימות דחופות להיום.</div>`;
+        tasksList.innerHTML = (bdayHtml + generalTasksHtml) || `<div class="text-gray-600 text-center py-12 italic text-sm text-right">אין משימות.</div>`;
         
         updateDayProgress();
 
@@ -234,7 +234,7 @@ async function fetchNewProperties() {
                     <div class="text-[9px] text-blue-400 text-right">₪${Number(p.price || 0).toLocaleString()}</div>
                 </div>`;
         });
-        propList.innerHTML = propHtml || `<div class="text-[10px] text-gray-600 text-right">אין נכסים חדשים כרגע.</div>`;
+        propList.innerHTML = propHtml || `<div class="text-[10px] text-gray-600 text-right">אין נכסים חדשים.</div>`;
     } catch (e) { console.error("Property Bank Error:", e); }
 }
 
@@ -341,64 +341,110 @@ window.handleAuthClick = () => {
 };
 
 /**
- * הצגת הלו"ז עם כפתורי ניווט ושיתוף מיקום חכמים
+ * הצגת הלו"ז - עיצוב RTL מתוקן עם חלוקה שבועי
  */
 async function listUpcomingEvents() {
     const calendarContent = document.getElementById('calendar-content'), leadsCountElem = document.getElementById('today-leads');
     try {
         const response = await gapi.client.calendar.events.list({
-            'calendarId': 'primary', 'timeMin': (new Date()).toISOString(),
-            'showDeleted': false, 'singleEvents': true, 'maxResults': 8, 'orderBy': 'startTime',
+            'calendarId': 'primary', 
+            'timeMin': (new Date()).toISOString(),
+            'showDeleted': false, 
+            'singleEvents': true, 
+            'maxResults': 30, 
+            'orderBy': 'startTime',
         });
         const events = response.result.items;
-        if (leadsCountElem) leadsCountElem.innerText = events ? events.length : 0;
         
-        if (!events || events.length == 0) {
-            calendarContent.innerHTML = `<div class="p-12 text-center text-gray-600 italic text-xs">אין פגישות להיום</div>`;
-            return;
+        const now = new Date();
+        const dayNames = ["יום א'", "יום ב'", "יום ג'", "יום ד'", "יום ה'", "יום ו'", "שבת"];
+        const weeklyGroups = [];
+        
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(now);
+            date.setDate(now.getDate() + i);
+            weeklyGroups.push({
+                dateStr: date.toDateString(),
+                label: i === 0 ? "היום" : (i === 1 ? "מחר" : dayNames[date.getDay()]),
+                events: []
+            });
         }
 
-        const now = new Date();
-
-        calendarContent.innerHTML = events.map(event => {
+        events.forEach(event => {
             const start = new Date(event.start.dateTime || event.start.date);
-            const time = start.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-            const location = event.location || '';
+            const group = weeklyGroups.find(g => g.dateStr === start.toDateString());
+            if (group) group.events.push(event);
+        });
+
+        if (leadsCountElem) leadsCountElem.innerText = weeklyGroups[0].events.length;
+        
+        let finalHtml = "";
+        weeklyGroups.forEach((group, index) => {
+            if (group.events.length === 0 && index > 1) return;
+
+            finalHtml += `<div class="day-header text-right font-bold gold-text mt-4 mb-2">${group.label}</div>`;
             
-            // הדגשת פגישה קרובה (בטווח של 3 שעות מהיום)
-            const isNext = (start > now && (start - now) < 10800000); 
-            const borderClass = isNext ? 'border-yellow-500 shadow-[0_0_15px_rgba(255,215,0,0.1)]' : (location ? 'border-blue-500' : 'border-gray-800');
+            if (group.events.length === 0) {
+                finalHtml += `<div class="text-[10px] text-gray-700 py-2 pr-4 italic text-right">אין פגישות מתוכננות</div>`;
+            } else {
+                finalHtml += group.events.map(event => {
+                    const start = new Date(event.start.dateTime || event.start.date);
+                    const time = start.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+                    const location = event.location || '';
+                    const description = event.description || '';
+                    const isToday = index === 0;
+                    
+                    let timeStatus = "";
+                    if (isToday) {
+                        const diffMins = Math.floor((start - now) / 60000);
+                        if (diffMins > 0 && diffMins < 60) timeStatus = `<span class="text-[9px] text-yellow-500 animate-pulse block font-bold">בעוד ${diffMins} דק'</span>`;
+                        else if (diffMins <= 0 && diffMins > -60) timeStatus = `<span class="text-[9px] text-red-500 font-bold block">עכשיו!</span>`;
+                    }
 
-            // כפתורי עזר לשטח
-            const navBtn = location ? 
-                `<a href="https://waze.com/ul?q=${encodeURIComponent(location)}" 
-                    target="_blank" class="text-[9px] bg-blue-600/20 text-blue-400 px-2 py-1 rounded-md border border-blue-400/30 hover:bg-blue-600 hover:text-white transition-all">📍 ניווט</a>` : '';
+                    let icon = "📅";
+                    if (event.summary.includes("סיור")) icon = "🏠";
+                    if (event.summary.includes("חתימה")) icon = "🖊️";
+                    if (event.summary.includes("שיחה")) icon = "📞";
 
-            const shareBtn = location ? 
-                `<a href="https://wa.me/?text=${encodeURIComponent('היי, מחכה לך כאן בנכס: ' + location + ' \nלינק לניווט: https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location))}" 
-                    target="_blank" class="text-[9px] bg-green-600/20 text-green-400 px-2 py-1 rounded-md border border-green-400/30 hover:bg-green-600 hover:text-white transition-all">💬 שלח מיקום</a>` : '';
+                    const navBtn = location ? `<a href="https://waze.com/ul?q=${encodeURIComponent(location)}" target="_blank" class="text-[8px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded border border-blue-400/30">📍 ניווט</a>` : '';
 
-            return `
-                <div class="dark-card p-4 rounded-xl flex justify-between items-center mb-3 text-right border-r-4 ${borderClass} transition-all">
-                    <div class="flex flex-col items-start gap-2">
-                        <div class="text-xs font-bold ${isNext ? 'gold-text' : 'text-blue-400'}">${time}</div>
-                        <div class="flex gap-1">${navBtn}${shareBtn}</div>
-                    </div>
-                    <div class="overflow-hidden">
-                        <div class="text-sm text-white font-bold truncate text-right">${event.summary}</div>
-                        ${location ? `<div class="text-[10px] text-gray-500 truncate mt-1 italic text-right">${location}</div>` : ''}
-                    </div>
-                </div>`;
-        }).join('');
+                    return `
+                        <div class="dark-card p-4 rounded-xl mb-2 border-r-4 ${isToday ? 'border-yellow-500' : 'border-gray-800'} transition-all text-right relative overflow-hidden">
+                            <div class="flex justify-between items-start gap-4" dir="rtl">
+                                
+                                <div class="flex-grow text-right">
+                                    <div class="text-sm text-white font-bold flex items-center gap-2 justify-start">
+                                        <span class="text-xs opacity-50">${icon}</span>
+                                        <span>${event.summary}</span>
+                                    </div>
+                                    <div class="text-[9px] text-gray-400 truncate mt-0.5 italic">${location}</div>
+                                    ${description ? `<div class="text-[8px] text-gray-600 mt-1 line-clamp-1 italic border-t border-white/5 pt-1">${description}</div>` : ''}
+                                </div>
+
+                                <div class="w-20 flex-shrink-0 flex flex-col items-center border-r border-white/5 pr-2">
+                                    <div class="text-[11px] font-bold text-blue-400">${time}</div>
+                                    ${timeStatus}
+                                    <div class="mt-1">${navBtn}</div>
+                                </div>
+
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+        });
+
+        calendarContent.innerHTML = finalHtml || `<div class="p-12 text-center text-gray-600 italic text-xs text-right">אין פגישות.</div>`;
+
     } catch (err) { console.error("Calendar Error:", err); }
 }
 
-/**
- * מודאל וניהול אירועים חדשים
- */
+// פונקציות המודאל - תוקנו ( window.)
 window.openEventModal = () => {
-    document.getElementById('event-modal').style.display = 'block';
+    document.getElementById('event-title').value = "";
+    document.getElementById('event-location').value = "";
+    document.getElementById('event-time').value = "";
     document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('event-modal').style.display = 'block';
 };
 
 window.closeEventModal = () => {
@@ -446,11 +492,11 @@ window.saveEventToGoogle = async () => {
             'resource': event
         });
         alert("האירוע נוצר בהצלחה! ✨");
-        closeEventModal();
+        window.closeEventModal();
         listUpcomingEvents(); 
     } catch (err) {
         console.error("Save Event Error:", err);
-        alert("שגיאה ביצירת האירוע. בדקי הרשאות כתיבה.");
+        alert("שגיאה ביצירת האירוע.");
     }
 };
 
