@@ -491,6 +491,20 @@
         </div>
     </div>
 
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                // הסרת אקטיביות מכולם
+                document.querySelectorAll('.tab-btn, .section-content').forEach(el => el.classList.remove('active'));
+                
+                // הוספת אקטיביות ללחוץ
+                btn.classList.add('active');
+                const sectionId = btn.id.replace('btn-show-', 'section-');
+                document.getElementById(sectionId).classList.add('active');
+            };
+        });
+    </script>
+
     <script type="module" src="admin-dashboard-logic.js"></script>
 </body>
 </html>

@@ -8,55 +8,88 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #FFD700; --dark-bg: #050505; --card-bg: #121212; }
-        body { font-family: 'Assistant', sans-serif; background-color: var(--dark-bg); color: white; margin: 0; }
+        :root { --gold: #FFD700; --dark-bg: #050505; --card-bg: #121212; --blue-accent: #3498db; }
+        
+        body { 
+            font-family: 'Assistant', sans-serif; 
+            background-color: var(--dark-bg); 
+            color: white; 
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* מונע גלילה של כל הדף - השליטה בתוך העמודות */
+        }
+
         .gold-text { color: var(--gold); }
-        .dark-card { background-color: var(--card-bg); border: 1px solid #222; transition: 0.3s; position: relative; }
-        .dark-card:hover { border-color: #444; transform: translateY(-2px); }
-        .stat-card { border-top: 4px solid var(--gold); }
+        .dark-card { background-color: var(--card-bg); border: 1px solid #222; transition: 0.3s; }
+        .dark-card:hover { border-color: #444; transform: translateY(-1px); }
+        .stat-card { border-top: 3px solid var(--gold); }
         
-        .task-done { opacity: 0.25 !important; filter: grayscale(1); text-decoration: line-through !important; }
-        
-        ::-webkit-scrollbar { width: 6px; }
+        /* עיצוב גלילה עדין */
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #050505; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        
-        .progress-container { width: 100%; height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, #FFD700, #B8860B); transition: width 0.5s ease-in-out; width: 0%; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(5px); }
-        .modal-content { background: #121212; border: 1px solid var(--gold); max-width: 450px; margin: 10vh auto; padding: 2rem; border-radius: 1.5rem; }
-        input, select { background: #1a1a1a !important; border: 1px solid #333 !important; color: white !important; }
+        /* הגדרות הגריד הראשי - ניצול מקסימלי */
+        .main-command-grid {
+            display: grid;
+            grid-template-columns: 28% 42% 30%;
+            gap: 1.5rem;
+            padding: 0 1.5rem;
+            flex-grow: 1;
+            min-height: 0; /* קריטי למניעת מתיחה */
+            width: 100%;
+        }
+
+        .column-box {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .scroll-v {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-left: 10px;
+        }
+
+        .task-done { opacity: 0.2 !important; filter: grayscale(1); text-decoration: line-through; }
+
+        .progress-container { width: 100%; height: 6px; background: #222; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #FFD700, #B8860B); transition: width 0.6s ease; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; backdrop-filter: blur(8px); }
+        .modal-content { background: #121212; border: 1px solid var(--gold); max-width: 450px; margin: 8vh auto; padding: 2rem; border-radius: 1.5rem; }
+        
+        input, select { background: #0a0a0a !important; border: 1px solid #222 !important; color: white !important; }
+        input:focus { border-color: var(--gold) !important; ring: 0 !important; }
 
         .day-header {
             position: sticky;
             top: 0;
             background: var(--dark-bg);
             z-index: 10;
-            padding: 10px 0;
-            margin-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
             font-weight: bold;
             color: var(--gold);
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
         }
-
-        @keyframes pulse-custom {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .animate-pulse-fast { animation: pulse-custom 1.5s infinite; }
     </style>
 </head>
-<body class="p-4 lg:p-8 text-right">
+<body class="p-4 lg:p-6 text-right">
 
     <div id="event-modal" class="modal px-4">
-        <div class="modal-content shadow-2xl">
-            <h3 class="text-xl font-bold gold-text mb-6 flex items-center gap-2 justify-end"><span>📅</span> קביעת אירוע חדש</h3>
+        <div class="modal-content shadow-[0_0_50px_rgba(255,215,0,0.1)]">
+            <h3 class="text-xl font-bold gold-text mb-6 flex items-center gap-2 justify-end"><span>📅</span> אירוע חדש ביומן</h3>
             <div class="space-y-4 text-right">
                 <div>
-                    <label class="text-[10px] text-gray-400 block mb-1">סוג האירוע</label>
-                    <select id="event-type" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
+                    <label class="text-[10px] text-gray-500 block mb-1">מה עושים?</label>
+                    <select id="event-type" class="w-full rounded-xl p-3 text-sm outline-none">
                         <option value="סיור נכסים 🏠">🏠 סיור נכסים</option>
                         <option value="פגישת חתימה 🖊️">🖊️ פגישת חתימה</option>
                         <option value="שיחת ייעוץ 📞">📞 שיחת ייעוץ</option>
@@ -64,95 +97,104 @@
                     </select>
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-400 block mb-1">שם הלקוח / תיאור</label>
-                    <input type="text" id="event-title" placeholder="למשל: משפחת כהן" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500 text-white text-right">
+                    <label class="text-[10px] text-gray-500 block mb-1">שם הלקוח / תיאור</label>
+                    <input type="text" id="event-title" placeholder="למשל: משפחת כהן" class="w-full rounded-xl p-3 text-sm outline-none text-right">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-400 block mb-1">מיקום האירוע</label>
-                    <input type="text" id="event-location" placeholder="כתובת הנכס" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500 text-white text-right">
+                    <label class="text-[10px] text-gray-500 block mb-1">כתובת / מיקום</label>
+                    <input type="text" id="event-location" placeholder="איפה נפגשים?" class="w-full rounded-xl p-3 text-sm outline-none text-right">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[10px] text-gray-400 block mb-1">תאריך</label>
-                        <input type="date" id="event-date" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
+                        <label class="text-[10px] text-gray-500 block mb-1">תאריך</label>
+                        <input type="date" id="event-date" class="w-full rounded-xl p-3 text-sm outline-none">
                     </div>
                     <div>
-                        <label class="text-[10px] text-gray-400 block mb-1">שעה</label>
-                        <input type="time" id="event-time" class="w-full rounded-xl p-3 text-sm outline-none focus:border-yellow-500">
+                        <label class="text-[10px] text-gray-500 block mb-1">שעה</label>
+                        <input type="time" id="event-time" class="w-full rounded-xl p-3 text-sm outline-none">
                     </div>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button onclick="saveEventToGoogle()" class="flex-grow bg-yellow-500 text-black font-bold p-3 rounded-xl hover:bg-yellow-400 transition-all text-sm">צור אירוע ביומן</button>
-                    <button onclick="closeEventModal()" class="px-6 bg-transparent border border-gray-700 text-gray-400 rounded-xl hover:bg-gray-800 transition-all text-sm">ביטול</button>
+                    <button onclick="saveEventToGoogle()" class="flex-grow bg-yellow-500 text-black font-bold p-3 rounded-xl hover:bg-yellow-400 transition-all text-sm">שמירה ליומן</button>
+                    <button onclick="closeEventModal()" class="px-6 border border-gray-700 text-gray-400 rounded-xl hover:bg-gray-800 transition-all text-sm">ביטול</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-[1600px] mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="dark-card stat-card p-5 rounded-2xl flex justify-between items-center shadow-lg">
-                <div><p class="text-[10px] text-gray-400 uppercase tracking-wider">עסקאות בחתימה</p><h3 class="text-2xl font-bold" id="stats-signing">0</h3></div>
-                <span class="text-2xl">🖊️</span>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 flex-shrink-0 px-6">
+        <div class="dark-card stat-card p-4 rounded-2xl flex justify-between items-center bg-zinc-900/30">
+            <div><p class="text-[9px] text-gray-500 uppercase font-bold">חוזים בחתימה</p><h3 class="text-xl font-bold" id="stats-signing">0</h3></div>
+            <span class="text-xl">🖊️</span>
+        </div>
+        <div class="dark-card p-4 rounded-2xl border-t-3 border-blue-500 flex justify-between items-center bg-zinc-900/30">
+            <div><p class="text-[9px] text-gray-500 uppercase font-bold">פגישות מתוכננות</p><h3 class="text-xl font-bold" id="today-leads">0</h3></div>
+            <span class="text-xl text-blue-500">📅</span>
+        </div>
+        <div class="dark-card p-4 rounded-2xl border-t-3 border-pink-500 flex justify-between items-center bg-zinc-900/30">
+            <div><p class="text-[9px] text-gray-500 uppercase font-bold">חגיגות היום</p><h3 class="text-xl font-bold" id="today-birthdays">0</h3></div>
+            <span class="text-xl text-pink-500">🎈</span>
+        </div>
+        <div class="dark-card p-4 rounded-2xl border-t-3 border-green-500 flex justify-between items-center bg-zinc-900/30">
+            <div><p class="text-[9px] text-gray-500 uppercase font-bold">צפי הכנסות</p><h3 class="text-xl font-bold text-green-500" id="stats-revenue">₪0</h3></div>
+            <span class="text-xl">💰</span>
+        </div>
+    </div>
+
+    <div class="main-command-grid">
+        
+        <div class="column-box">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-lg font-bold flex items-center gap-2"><span class="text-blue-400">📅</span> סדר יום</h2>
+                <div class="flex gap-2">
+                    <button onclick="openEventModal()" class="text-[9px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 hover:bg-blue-500 transition-all">+ אירוע</button>
+                    <button id="auth_button" onclick="handleAuthClick()" class="text-[9px] bg-zinc-800 text-gray-300 px-3 py-1 rounded-full border border-white/10">סנכרון</button>
+                </div>
             </div>
-            <div class="dark-card p-5 rounded-2xl border-t-4 border-blue-500 flex justify-between items-center shadow-lg">
-                <div><p class="text-[10px] text-gray-400 uppercase tracking-wider">פגישות היום</p><h3 class="text-2xl font-bold" id="today-leads">0</h3></div>
-                <span class="text-2xl text-blue-500">📅</span>
-            </div>
-            <div class="dark-card p-5 rounded-2xl border-t-4 border-pink-500 flex justify-between items-center shadow-lg">
-                <div><p class="text-[10px] text-gray-400 uppercase tracking-wider">ימי הולדת</p><h3 class="text-2xl font-bold" id="today-birthdays">0</h3></div>
-                <span class="text-2xl text-pink-500">🎈</span>
-            </div>
-            <div class="dark-card p-5 rounded-2xl border-t-4 border-green-500 flex justify-between items-center shadow-lg">
-                <div><p class="text-[10px] text-gray-400 uppercase tracking-wider">צפי עמלות</p><h3 class="text-2xl font-bold text-green-500" id="stats-revenue">₪0</h3></div>
-                <span class="text-2xl">💰</span>
+            <div id="calendar-content" class="scroll-v">
+                <div class="text-xs text-gray-600 italic">טוען נתונים מגוגל...</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-4 space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold italic">📅 סדר יום</h2>
-                    <div class="flex gap-2">
-                        <button onclick="openEventModal()" class="text-[10px] bg-green-600/20 text-green-400 px-3 py-1 rounded-full border border-green-400/30 hover:bg-green-600 transition-all">+ אירוע</button>
-                        <button id="auth_button" onclick="handleAuthClick()" class="text-[10px] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full border border-blue-400/30 hover:bg-blue-600 transition-all">סנכרון</button>
-                    </div>
-                </div>
-                <div id="calendar-content" class="max-h-[75vh] overflow-y-auto pr-2 text-right">
-                    טוען יומן...
-                </div>
+        <div class="column-box">
+            <div class="flex justify-between items-end mb-4 flex-shrink-0">
+                <h2 class="text-lg font-bold gold-text flex items-center gap-2"><span>🎯</span> משימות קריטיות</h2>
+                <span id="progress-text" class="text-[10px] text-gray-500">0% בוצע</span>
             </div>
-
-            <div class="lg:col-span-5 space-y-6 text-right">
-                <div class="flex justify-between items-end">
-                    <h2 class="text-xl font-bold italic">🎯 משימות קריטיות להיום</h2>
-                    <span id="progress-text" class="text-[10px] gold-text font-bold">0% הושלמו</span>
+            
+            <div class="dark-card p-5 rounded-3xl bg-zinc-900/20 border-zinc-800 flex flex-col h-full overflow-hidden">
+                <div class="progress-container mb-6 flex-shrink-0">
+                    <div id="main-progress-bar" class="progress-bar shadow-[0_0_10px_rgba(255,215,0,0.3)]"></div>
                 </div>
-                <div class="dark-card p-6 rounded-2xl shadow-2xl bg-gradient-to-b from-[#121212] to-black border-gray-800">
-                    <div class="progress-container"><div id="main-progress-bar" class="progress-bar"></div></div>
-                    <div id="tasks-list" class="space-y-3 min-h-[400px]"></div>
-                    <div class="mt-8 pt-6 border-t border-gray-800 flex gap-2">
-                        <input type="text" id="new-task-input" placeholder="הוסיפי משימה מהירה..." class="flex-grow bg-black border border-gray-700 rounded-xl p-4 text-sm focus:border-yellow-500 outline-none text-white text-right">
-                        <button id="add-task-btn" class="bg-yellow-500 text-black px-6 rounded-xl font-bold hover:bg-yellow-400 transition-all text-xs">הוספה</button>
+                
+                <div id="tasks-list" class="scroll-v space-y-3">
                     </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-3 space-y-6 text-right">
-                <div class="space-y-3">
-                    <h2 class="text-sm font-bold gold-text flex items-center gap-2 justify-end">
-                        <span>⚠️</span> דורש טיפול
-                    </h2>
-                    <div id="stuck-clients-list" class="space-y-3 max-h-[40vh] overflow-y-auto pr-1"></div>
-                </div>
-                <div class="space-y-3 pt-6 border-t border-gray-800">
-                    <h2 class="text-sm font-bold text-blue-400 flex items-center gap-2 justify-end">
-                        <span>🏠</span> נכסים חדשים
-                    </h2>
-                    <div id="new-properties-list" class="space-y-3"></div>
+                
+                <div class="mt-4 pt-4 border-t border-white/5 flex gap-2 flex-shrink-0">
+                    <input type="text" id="new-task-input" placeholder="מה המשימה הבאה שלך?" class="flex-grow bg-black/40 border-0 rounded-2xl p-4 text-sm focus:ring-1 focus:ring-yellow-500 outline-none text-white text-right placeholder:text-gray-700">
+                    <button id="add-task-btn" class="bg-yellow-500 text-black px-6 rounded-2xl font-bold hover:bg-yellow-400 transition-all shadow-lg active:scale-95">הוספה</button>
                 </div>
             </div>
         </div>
+
+        <div class="column-box">
+            <div class="flex flex-col h-1/2 mb-6">
+                <h2 class="text-xs font-bold text-red-400 flex items-center gap-2 justify-end mb-4 flex-shrink-0">
+                    <span>⚠️</span> דורש יחס (תקועים)
+                </h2>
+                <div id="stuck-clients-list" class="scroll-v space-y-2">
+                    </div>
+            </div>
+            
+            <div class="flex flex-col h-1/2 pt-4 border-t border-white/5">
+                <h2 class="text-xs font-bold text-blue-400 flex items-center gap-2 justify-end mb-4 flex-shrink-0">
+                    <span>🏠</span> נכסים חדשים בבנק
+                </h2>
+                <div id="new-properties-list" class="scroll-v space-y-3">
+                    </div>
+            </div>
+        </div>
+
     </div>
 
     <script async defer src="https://apis.google.com/js/api.js"></script>
