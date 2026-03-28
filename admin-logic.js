@@ -65,6 +65,19 @@ function checkFollowUpStatus() {
 }
 
 async function init() {
+// בדיקת זיהוי משתמש לפתרון שגיאת Permissions
+    const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+    const auth = getAuth();
+    
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("✅ משתמש מזוהה במערכת:", user.email);
+        } else {
+            console.error("❌ אזהרה: המערכת לא מזהה משתמש מחובר! השמירה תיכשל.");
+            alert("שימי לב: את לא מחוברת למערכת בכתובת זו. אנא בצעי Login מחדש בטאב זה.");
+        }
+    });
+
     if (!clientID) return;
     try {
         const bankSnap = await getDocs(collection(db, "property_bank"));
@@ -116,53 +129,51 @@ async function init() {
 
 document.getElementById('btn-save-all').onclick = async () => {
     checkFollowUpStatus();
-    const currentStatus = document.getElementById('in-status').value;
     
-    // בניית האובייקט עם הגנות מפני ערכים ריקים (undefined)
+    // שורות זיהוי - יודפסו לקונסול כדי שנראה מה undefined
+    console.log("בדיקת משתנים לפני שמירה:");
+    console.log("currentProperties:", currentProperties);
+    console.log("currentFavorites:", window.currentFavorites);
+    console.log("currentRatings:", currentRatings);
+
     const data = {
-        clientName: document.getElementById('in-clientName')?.value || (document.getElementById('client-name-display')?.innerText) || "",
-        status: currentStatus,
+        clientName: document.getElementById('in-clientName')?.value || "",
+        status: document.getElementById('in-status')?.value || "INITIAL",
         clientPhone: document.getElementById('in-clientPhone')?.value || "",
         clientBirthday: document.getElementById('in-clientBirthday')?.value || "",
-        clientEmail: document.getElementById('in-clientEmail')?.value || "",
-        clientNeeds: document.getElementById('in-clientNeeds')?.value || "",
         privateNotes: document.getElementById('in-privateNotes')?.value || "",
         isNotesUrgent: document.getElementById('in-isNotesUrgent')?.checked || false,
-        targetDate: document.getElementById('in-targetDate')?.value || "",
         followUpDate: document.getElementById('in-followUpDate')?.value || "",
-        brokerageRateSale: parseFloat(document.getElementById('in-brokerageRateSale')?.value) || 0,
-        lawyerRateSale: parseFloat(document.getElementById('in-lawyerRateSale')?.value) || 0,
-        brokerageRatePurch: parseFloat(document.getElementById('in-brokerageRatePurch')?.value) || 0,
-        lawyerRatePurch: parseFloat(document.getElementById('in-lawyerRatePurch')?.value) || 0,
         
-        // הגנה קריטית: אם המשתנה לא קיים, שלח מערך/אובייקט ריק במקום undefined
+        prefEdu: parseFloat(document.getElementById('in-prefEdu')?.value) || 3,
+        prefTrans: parseFloat(document.getElementById('in-prefTrans')?.value) || 3,
+        prefLeisure: parseFloat(document.getElementById('in-prefLeisure')?.value) || 3,
+        prefSea: parseFloat(document.getElementById('in-prefSea')?.value) || 3,
+        limitHighFloor: document.getElementById('in-limitHighFloor')?.checked || false,
+
+        brokerageRateSale: parseFloat(document.getElementById('in-brokerageRateSale')?.value) || 0,
+        brokerageRatePurch: parseFloat(document.getElementById('in-brokerageRatePurch')?.value) || 0,
+        lawyerRateSale: parseFloat(document.getElementById('in-lawyerRateSale')?.value) || 0,
+        lawyerRatePurch: parseFloat(document.getElementById('in-lawyerRatePurch')?.value) || 0,
+
+        // ההגנה הקריטית
         properties: currentProperties || [],
-        favorites: window.currentFavorites || [], 
+        favorites: window.currentFavorites || [],
         ratings: currentRatings || {},
         
-        roadmapStep: STATUS_TO_ROADMAP_STEP[currentStatus] || "1",
+        roadmapStep: STATUS_TO_ROADMAP_STEP[document.getElementById('in-status')?.value || "INITIAL"] || "1",
         lastUpdated: new Date().toISOString()
     };
     
-    console.log("ניסיון שמירה עם הנתונים הבאים:", data);
-
     try {
         if (!clientID) throw new Error("Missing Client ID");
-        
         await updateDoc(doc(db, "projects", clientID), data);
-        await logAction(`✨ עודכן תיק לקוח: ${data.clientName}`);
-        
+        alert("התיק נשמר בהצלחה! ✨");
         window.hasUnsavedChanges = false;
-        const saveBtn = document.getElementById('btn-save-all');
-        if (saveBtn) saveBtn.classList.remove('unsaved');
-        
-        const saveStatus = document.getElementById('save-status');
-        if (saveStatus) saveStatus.style.display = 'none';
-        
-        alert("התיק סונכרן בהצלחה! ✨");
-    } catch (error) { 
-        console.error("שגיאת שמירה מפורטת:", error);
-        alert("שגיאה בשמירה: " + error.message); 
+        document.getElementById('btn-save-all')?.classList.remove('unsaved');
+    } catch (e) {
+        console.error("שגיאת שמירה מפורטת:", e);
+        alert("שגיאה בשמירה: " + e.message);
     }
 };
 
@@ -276,6 +287,134 @@ window.handleGoBack = () => {
         window.close(); // סוגר את הטאב
     }
 };
+
+window.renderTourNotesForAdmin = (tourNotes) => {
+    const container = document.getElementById('admin-tour-notes-list');
+    if (!container) return;
+    const keys = Object.keys(tourNotes || {});
+    if (keys.length === 0) {
+        container.innerHTML = '<p style="color:#888; font-style:italic;">אין עדיין סיכומים מהשטח.</p>';
+        return;
+    }
+
+    container.innerHTML = keys.map(id => {
+        const n = tourNotes[id];
+        
+        // מיפוי השדות המדויק לפי צילום המסך מה-DB
+        const noise = n.noise || "0";
+        const condition = n.condition || "0";
+        const moisture = n.moisture ? '⚠️ יש רטיבות' : '✅ אין רטיבות';
+        const renovated = n.renovated ? '✨ מטבח חדש/משופץ' : '🏚️ מטבח ישן';
+        const light = n.light ? '☀️ מוארת מספיק' : '🌑 חשוכה';
+        const dateStr = n.timestamp ? new Date(n.timestamp).toLocaleDateString('he-IL') : '';
+
+        return `
+            <div class="tour-note-card" style="border-right:5px solid #FFD700; background:#fff; padding:15px; margin-bottom:15px; border:1px solid #eee; border-radius:10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;">
+                    <strong style="color:#2c3e50;">🏠 נכס: ${id}</strong>
+                    <span style="font-size:11px; color:#999;">${dateStr}</span>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 13px; font-weight: bold; color: #4f46e5;">
+                    <span>🔊 רעש: ${noise}/5</span>
+                    <span>🛠️ מצב תחזוקה: ${condition}/5</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 11px;">
+                    <span style="background:#f8f9fa; padding:4px; border-radius:4px; text-align:center; border:1px solid #eee;">${moisture}</span>
+                    <span style="background:#f8f9fa; padding:4px; border-radius:4px; text-align:center; border:1px solid #eee;">${renovated}</span>
+                    <span style="background:#f8f9fa; padding:4px; border-radius:4px; text-align:center; border:1px solid #eee;">${light}</span>
+                </div>
+
+                <div style="background: #fff9e6; padding: 12px; border-radius: 8px; font-size: 14px; font-style: italic; color: #444; border-right: 3px solid #FFD700;">
+                    "${n.notes || "אין הערות נוספות"}"
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// עדכון פונקציית הרענון הידני
+window.manualRefreshTourNotes = async () => {
+    if (!clientID) return;
+    const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const snap = await getDoc(doc(db, "projects", clientID));
+    if (snap.exists()) {
+        window.renderTourNotesForAdmin(snap.data().tourNotes || {});
+    }
+};
+
+// --- שחזור לוגיקת בנק הנכסים (הקוד שנמצא בגרסאות קודמות) ---
+
+window.openBankModal = () => {
+    // עדכון רשימת ה-IDs שנבחרו כבר (כדי להציג V במודל)
+    selectedIDs = currentProperties.map(p => p.propertyId || p.id);
+    renderBankList();
+    const modal = document.getElementById('bank-modal');
+    if (modal) modal.style.display = 'block';
+};
+
+function renderBankList() {
+    const list = document.getElementById('bank-list');
+    if (!list) return;
+    const searchTerm = document.getElementById('bank-search')?.value.toLowerCase() || "";
+
+    list.innerHTML = allBankProperties
+        .filter(p => (p.address || "").toLowerCase().includes(searchTerm))
+        .map(p => {
+            const isSelected = selectedIDs.includes(p.id);
+            return `
+            <div class="bank-item ${isSelected ? 'selected' : ''}" 
+                 onclick="window.toggleBankSelection('${p.id}')" 
+                 style="padding:15px; border-bottom:1px solid #eee; cursor:pointer; position:relative;">
+                <div style="font-weight:bold;">${p.address || "ללא כתובת"}</div>
+                <div style="font-size:12px; color:#666;">₪${Number(p.price || 0).toLocaleString()}</div>
+                ${isSelected ? '<span style="position:absolute; left:20px; top:50%; transform:translateY(-50%); color:green; font-weight:bold;">✓</span>' : ''}
+            </div>`;
+        }).join('');
+}
+
+window.toggleBankSelection = (id) => {
+    if (selectedIDs.includes(id)) {
+        selectedIDs = selectedIDs.filter(sid => sid !== id);
+    } else {
+        selectedIDs.push(id);
+    }
+    renderBankList();
+};
+
+// האזנה לחיפוש בבנק הנכסים
+document.getElementById('bank-search')?.addEventListener('input', renderBankList);
+
+// כפתור אישור שיוך
+const confirmBtn = document.getElementById('btn-confirm-selection');
+if (confirmBtn) {
+    confirmBtn.onclick = () => {
+        // 1. יצירת רשימת נכסים חדשה עם הגנה מלאה
+        currentProperties = selectedIDs.map(id => {
+            const prop = allBankProperties.find(p => p.id === id);
+            return { 
+                propertyId: id || "", 
+                address: prop?.address || "נכס משויך",
+                clientRole: "BUYER", // חובה ערך התחלתי
+                closingDate: ""      // חובה ערך התחלתי
+            };
+        });
+        
+        // 2. הגנה קריטית על משתנים גלובליים לפני רענון התצוגה
+        if (!window.currentFavorites) window.currentFavorites = [];
+        if (!currentRatings) currentRatings = {};
+
+        renderAssigned(); // עדכון התצוגה בדף
+        markChanged();    // סימון שיש שינויים לשמירה
+        
+        // סגירת המודל
+        const modal = document.getElementById('bank-modal');
+        if (modal) modal.style.display = 'none';
+        
+        console.log("✅ נכסים שויכו. מוכן לשמירה ללא undefined.");
+    };
+}
 
 init();
 document.addEventListener('DOMContentLoaded', init);

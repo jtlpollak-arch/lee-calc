@@ -19,7 +19,6 @@
         .btn-save.unsaved { background: #e67e22; animation: pulse-save 2s infinite; }
         @keyframes pulse-save { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         
-        /* עיצוב כפתור המשימה החדש */
         .btn-task { background: #6366f1; color: white; width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-task:hover { background: #4f46e5; }
 
@@ -32,29 +31,12 @@
             border-radius: 8px;
             margin: 5px;
         }
-        .bank-item.selected::after {
-            content: '✓';
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #FFD700;
-            color: black;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
 
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
         .modal-content { background: white; margin: 5% auto; padding: 30px; width: 80%; max-width: 700px; border-radius: 15px; max-height: 85vh; display: flex; flex-direction: column; }
         #bank-list { overflow-y: auto; flex-grow: 1; margin-top: 15px; border: 1px solid #eee; border-radius: 8px; }
 
         .assigned-list { margin-top: 15px; }
-        .assigned-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #2c3e50; }
         
         .urgent-active { border: 2px solid #e74c3c !important; background: #fff5f5 !important; }
         .save-banner { display: none; background: #e67e22; color: white; text-align: center; padding: 10px; position: sticky; top: 0; z-index: 1001; font-weight: bold; border-radius: 0 0 10px 10px; }
@@ -71,20 +53,6 @@
             padding: 15px;
             margin-bottom: 15px;
             border-right: 5px solid #FFD700;
-        }
-        .tour-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-        .tour-badge {
-            background: #f0f2f5;
-            padding: 4px 8px;
-            border-radius: 4px;
-            color: #444;
-            font-weight: 600;
         }
     </style>
 </head>
@@ -104,16 +72,16 @@
     <div class="card">
         <h3>📍 פרטי תיק וסטטוס התקדמות</h3>
         <label>שם הלקוח:</label>
-        <input type="text" id="in-clientName" class="track-change">
+        <input type="text" id="in-clientName">
         
         <label>מספר טלפון:</label>
-        <input type="text" id="in-clientPhone" class="track-change">
+        <input type="text" id="in-clientPhone">
 
         <label>תאריך לידה:</label>
-        <input type="date" id="in-clientBirthday" class="track-change">
+        <input type="date" id="in-clientBirthday">
 
         <label style="margin-top: 15px;">סטטוס ושלב בציר הזמן (Roadmap):</label>
-        <select id="in-status" class="track-change">
+        <select id="in-status">
             <optgroup label="שלבי ציר זמן פעילים">
                 <option value="INITIAL">🔍 שלב 1: חיפוש ואיתור נכס</option>
                 <option value="RESEARCH">⚖️ שלב 2: בדיקות ומשא ומתן</option>
@@ -126,20 +94,19 @@
                 <option value="CANCELLED">❌ בוטל (תיק לא פעיל)</option>
             </optgroup>
         </select>
-        <p style="font-size: 11px; color: #888; margin-top: 5px;">* בחירה בסטטוס מעדכנת אוטומטית את ציר הזמן שמוצג ללקוח בפורטל.</p>
 
         <div style="margin-top:20px; padding:15px; background:#fdfdfd; border-radius:10px; border:1px solid #eee;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <label style="margin:0;">📝 הערות פרטיות (לא ללקוח):</label>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="in-isNotesUrgent" class="track-change" style="width:18px; height:18px; cursor:pointer;">
-                    <label for="in-isNotesUrgent" style="margin:0; color:#e74c3c; cursor:pointer;">⚠️ דחוף לטיפול</label>
+                    <input type="checkbox" id="in-isNotesUrgent" style="width:18px; height:18px;">
+                    <label for="in-isNotesUrgent" style="margin:0; color:#e74c3c;">⚠️ דחוף לטיפול</label>
                 </div>
             </div>
-            <textarea id="in-privateNotes" class="track-change" placeholder="רשמי כאן הערות למעקב אישי..."></textarea>
+            <textarea id="in-privateNotes" placeholder="רשמי כאן הערות למעקב אישי..."></textarea>
             
             <label style="margin-top:10px;">📅 תאריך למעקב הבא:</label>
-            <input type="date" id="in-followUpDate" class="track-change">
+            <input type="date" id="in-followUpDate">
 
             <button type="button" class="btn btn-task" onclick="window.addAdminTaskFromClient()">
                 🎯 הוספת משימה ללוח "היום שלי"
@@ -153,54 +120,52 @@
             <div class="grid">
                 <div>
                     <label>עו"ד מכירה (%):</label>
-                    <input type="number" id="in-lawyerRateSale" step="0.1" class="track-change" placeholder="0.5">
+                    <input type="number" id="in-lawyerRateSale" step="0.1">
                 </div>
                 <div>
                     <label>עו"ד קנייה (%):</label>
-                    <input type="number" id="in-lawyerRatePurch" step="0.1" class="track-change" placeholder="0.5">
+                    <input type="number" id="in-lawyerRatePurch" step="0.1">
                 </div>
             </div>
             <div class="grid" style="margin-top:15px;">
                 <div>
                     <label>תיווך מכירה (%):</label>
-                    <input type="number" id="in-brokerageRateSale" step="0.1" class="track-change" placeholder="2">
+                    <input type="number" id="in-brokerageRateSale" step="0.1">
                 </div>
                 <div>
                     <label>תיווך קנייה (%):</label>
-                    <input type="number" id="in-brokerageRatePurch" step="0.1" class="track-change" placeholder="2">
+                    <input type="number" id="in-brokerageRatePurch" step="0.1">
                 </div>
             </div>
         </div>
 
         <div class="card">
             <h3>🎯 העדפות התאמה אישית (1-5)</h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">הגדירי עד כמה כל פרמטר חשוב ללקוח לטובת חישוב מדד ההתאמה.</p>
             <div class="grid">
                 <div>
                     <label>חשיבות חינוך:</label>
-                    <input type="number" id="in-prefEdu" min="1" max="5" step="0.1" class="track-change" value="3">
+                    <input type="number" id="in-prefEdu" min="1" max="5" step="0.1">
                 </div>
                 <div>
                     <label>חשיבות תחבורה:</label>
-                    <input type="number" id="in-prefTrans" min="1" max="5" step="0.1" class="track-change" value="3">
+                    <input type="number" id="in-prefTrans" min="1" max="5" step="0.1">
                 </div>
             </div>
             <div class="grid" style="margin-top:15px;">
                 <div>
                     <label>חשיבות פנאי:</label>
-                    <input type="number" id="in-prefLeisure" min="1" max="5" step="0.1" class="track-change" value="3">
+                    <input type="number" id="in-prefLeisure" min="1" max="5" step="0.1">
                 </div>
                 <div>
                     <label>חשיבות ים:</label>
-                    <input type="number" id="in-prefSea" min="1" max="5" step="0.1" class="track-change" value="3">
+                    <input type="number" id="in-prefSea" min="1" max="5" step="0.1">
                 </div>
             </div>
             
             <label class="featured-wrapper" style="margin-top:20px;">
-                <input type="checkbox" id="in-limitHighFloor" class="track-change">
+                <input type="checkbox" id="in-limitHighFloor">
                 <div style="display:flex; flex-direction:column;">
                     <span style="font-weight:bold; color:#2c3e50;">🚫 הימנעות מקומות גבוהות</span>
-                    <span style="font-size:11px; color:#666;">יוריד משמעותית את ציון ההתאמה לנכסים מעל קומה 4.</span>
                 </div>
             </label>
         </div>
@@ -212,7 +177,6 @@
         <h3 style="margin:0;">📋 תובנות מהשטח (סיכומי סיורי לקוח)</h3>
         <button type="button" class="btn" onclick="window.manualRefreshTourNotes()" style="background:#f0f2f5; font-size:12px; padding:6px 12px; border:1px solid #ddd;">🔄 רענון נתונים מהשטח</button>
     </div>
-    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">כאן מופיעים הנתונים שהלקוח מזין בצ'ק-ליסט הסיור בפורטל האישי שלו.</p>
     <div id="admin-tour-notes-list">
         <p style="color:#888; font-style:italic;">טוען סיכומים מהשטח...</p>
     </div>
@@ -223,24 +187,18 @@
         <h3>🏠 נכסים משויכים לתיק זה</h3>
         <button class="btn btn-primary" onclick="window.openBankModal()">➕ הוסיפי נכס מבנק הנכסים</button>
     </div>
-    <div id="assigned-props-list" class="assigned-list"></div>
+    <div id="assigned-props-container" class="assigned-list"></div>
 </div>
 
 <button id="btn-save-all" class="btn btn-save">💾 שמירת כל השינויים בתיק הלקוח</button>
 
 <div id="bank-modal" class="modal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">בחירת נכסים לשיוך</h3>
-            <button onclick="document.getElementById('bank-modal').style.display='none'" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
-        </div>
-        <p style="color:#666; margin:10px 0;">סמני את כל הנכסים שברצונך לשייך ללקוח ולחצי על "אישור שיוך" בסיום.</p>
-        <input type="text" id="bank-search" placeholder="חפשי לפי כתובת או עיר..." style="margin-top:10px;">
-        
+        <h3>בחירת נכסים לשיוך</h3>
+        <input type="text" id="bank-search" placeholder="חפשי לפי כתובת או עיר...">
         <div id="bank-list"></div>
-
         <div style="margin-top:20px; display:flex; gap:10px;">
-            <button id="btn-confirm-selection" class="btn btn-save" style="margin-top:0; flex:2;">✅ אישור שיוך הנכסים שנבחרו</button>
+            <button id="btn-confirm-selection" class="btn btn-save" style="margin-top:0; flex:2;">✅ אישור שיוך</button>
             <button onclick="document.getElementById('bank-modal').style.display='none'" class="btn" style="background:#eee; flex:1;">ביטול</button>
         </div>
     </div>
