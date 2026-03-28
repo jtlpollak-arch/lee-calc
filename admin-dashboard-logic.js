@@ -563,22 +563,89 @@ window.delPr = async (id, addr) => {
 };
 
 window.editPr = (id, d) => {
+    // מזהה הנכס (נסתר)
     document.getElementById('edit-prop-id').value = id;
-    document.getElementById('p-address').value = d.address;
+    
+    // נתונים בסיסיים
+    document.getElementById('p-address').value = d.address || "";
     document.getElementById('p-city-select').value = d.city || "";
+    document.getElementById('p-type').value = d.type || "";
+    
+    // נתונים פיזיים (כולל פורמט מחיר עם פסיקים לתצוגה)
+    const formattedPrice = d.price ? Number(d.price).toLocaleString() : "";
+    document.getElementById('p-price').value = formattedPrice;
+    
+    document.getElementById('p-rooms').value = d.rooms || "";
+    document.getElementById('p-floor').value = d.floor || "";
+    document.getElementById('p-sqm').value = d.sqm || "";
+    document.getElementById('p-distTrain').value = d.distTrain || "";
+    document.getElementById('p-status').value = d.status || "ACTIVE";
+
+    // מדדי איכות חיים (ציונים)
+    document.getElementById('p-scoreEdu').value = d.scoreEdu || "";
+    document.getElementById('p-scoreTrans').value = d.scoreTrans || "";
+    document.getElementById('p-scoreLeisure').value = d.scoreLeisure || "";
+    document.getElementById('p-scoreSea').value = d.scoreSea || "";
+    document.getElementById('p-distSea').value = d.distSea || "";
+
+    // לינקים ותוכן
+    document.getElementById('p-link').value = d.link || "";
+    document.getElementById('p-featured').checked = d.featured || false; // Checkbox משתמש ב-checked
+    document.getElementById('p-leeTip').value = d.leeTip || "";
+    document.getElementById('p-ai-analysis').value = d.aiAnalysis || "";
+
+    // פתיחת המודל
     document.getElementById('prop-modal').style.display = 'block';
 };
 
 document.getElementById('save-prop-to-db').onclick = async () => {
     const id = document.getElementById('edit-prop-id').value;
+    
+    // איסוף הלינקים מה-textarea ופיצול למערך לפי ירידת שורה
+    const rawLinksText = document.getElementById('p-link').value;
+    const linksArray = rawLinksText.split('\n').map(l => l.trim()).filter(l => l !== "");
+
+    // איסוף כל הנתונים מהמודל לפי ה-IDs ב-HTML
     const data = {
         address: document.getElementById('p-address').value,
         city: document.getElementById('p-city-select').value,
+        type: document.getElementById('p-type').value,
+        price: window.cleanPhone(document.getElementById('p-price').value), 
+        rooms: document.getElementById('p-rooms').value,
+        floor: document.getElementById('p-floor').value,
+        sqm: document.getElementById('p-sqm').value,
+        distTrain: document.getElementById('p-distTrain').value,
+        status: document.getElementById('p-status').value,
+        scoreEdu: document.getElementById('p-scoreEdu').value,
+        scoreTrans: document.getElementById('p-scoreTrans').value,
+        scoreLeisure: document.getElementById('p-scoreLeisure').value,
+        scoreSea: document.getElementById('p-scoreSea').value,
+        distSea: document.getElementById('p-distSea').value,
+        
+        // --- עדכון הלינקים לשמירה כמערך וגם כטקסט לגיבוי ---
+        link: rawLinksText,        // שומר את הטקסט הגולמי כפי שהוקלד (בשביל ה-Admin)
+        links: linksArray,        // שומר מערך נקי (בשביל הבורר ב-Client)
+        
+        featured: document.getElementById('p-featured').checked,
+        leeTip: document.getElementById('p-leeTip').value,
+        aiAnalysis: document.getElementById('p-ai-analysis').value,
         lastUpdated: new Date().toISOString()
     };
-    if (id) await updateDoc(doc(db, "property_bank", id), data);
-    else await addDoc(collection(db, "property_bank"), data);
-    document.getElementById('prop-modal').style.display = 'none';
+
+    try {
+        if (id) {
+            await updateDoc(doc(db, "property_bank", id), data);
+        } else {
+            await addDoc(collection(db, "property_bank"), data);
+        }
+        
+        document.getElementById('prop-modal').style.display = 'none';
+        alert("הנכס נשמר בהצלחה בבנק הנכסים!");
+        
+    } catch (error) {
+        console.error("שגיאה בשמירת הנכס:", error);
+        alert("אירעה שגיאה בשמירה. בדקי את הקונסול.");
+    }
 };
 
 window.openMatchModal = async (propId, address) => {
@@ -631,9 +698,30 @@ document.getElementById('open-new-client-modal').onclick = () => {
 
 document.getElementById('confirm-create-client').onclick = async () => {
     const name = document.getElementById('new-client-name-input').value.trim();
+    const rawPhone = document.getElementById('new-client-phone-input').value;
+
     if (!name) return alert("הזיני שם");
-    await addDoc(collection(db, "projects"), { clientName: name, roadmapStep: "1", timestamp: new Date().toISOString() });
-    document.getElementById('client-modal').style.display = 'none';
+
+    try {
+        // 1. שמירת הרשומה וקבלת המזהה (docRef)
+        const docRef = await addDoc(collection(db, "projects"), { 
+            clientName: name, 
+            clientPhone: window.cleanPhone(rawPhone), // שמירת הטלפון נקי ממקפים
+            roadmapStep: "1", 
+            timestamp: new Date().toISOString() 
+        });
+
+        // 2. סגירת המודאל
+        document.getElementById('client-modal').style.display = 'none';
+
+        // 3. פתיחת דף העריכה בטאב חדש עם ה-ID שנוצר
+        const newClientId = docRef.id;
+        window.open(`edit-project.html?id=${newClientId}`, '_blank');
+
+    } catch (error) {
+        console.error("שגיאה ביצירת לקוח:", error);
+        alert("אירעה שגיאה ביצירת הלקוח. בדקי את החיבור למערכת.");
+    }
 };
 
 document.getElementById('open-new-prop-modal').onclick = () => {

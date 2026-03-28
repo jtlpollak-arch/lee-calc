@@ -96,13 +96,27 @@ async function init() {
 
             document.getElementById('in-status').value = d.status || "INITIAL";
             document.getElementById('in-clientPhone').value = FinanceLogic.formatPhone(d.clientPhone || "");
-            if (document.getElementById('in-clientBirthday')) document.getElementById('in-clientBirthday').value = d.clientBirthday || "";
-            if (document.getElementById('in-clientEmail')) document.getElementById('in-clientEmail').value = d.clientEmail || "";
-            if(document.getElementById('in-clientNeeds')) document.getElementById('in-clientNeeds').value = d.clientNeeds || "";
-            if(document.getElementById('in-privateNotes')) document.getElementById('in-privateNotes').value = d.privateNotes || "";
-            if(document.getElementById('in-targetDate')) document.getElementById('in-targetDate').value = d.targetDate || "";
-            if(document.getElementById('in-followUpDate')) document.getElementById('in-followUpDate').value = d.followUpDate || "";
             
+            // טעינת תאריך לידה
+            if (document.getElementById('in-clientBirthday')) document.getElementById('in-clientBirthday').value = d.clientBirthday || "";
+            
+            if (document.getElementById('in-clientEmail')) document.getElementById('in-clientEmail').value = d.clientEmail || "";
+            if (document.getElementById('in-clientNeeds')) document.getElementById('in-clientNeeds').value = d.clientNeeds || "";
+            if (document.getElementById('in-privateNotes')) document.getElementById('in-privateNotes').value = d.privateNotes || "";
+            if (document.getElementById('in-targetDate')) document.getElementById('in-targetDate').value = d.targetDate || "";
+            if (document.getElementById('in-followUpDate')) document.getElementById('in-followUpDate').value = d.followUpDate || "";
+            
+            // טעינת העדפות התאמה אישית (1-5)
+            if (document.getElementById('in-prefEdu')) document.getElementById('in-prefEdu').value = d.prefEdu || 3;
+            if (document.getElementById('in-prefTrans')) document.getElementById('in-prefTrans').value = d.prefTrans || 3;
+            if (document.getElementById('in-prefLeisure')) document.getElementById('in-prefLeisure').value = d.prefLeisure || 3;
+            if (document.getElementById('in-prefSea')) document.getElementById('in-prefSea').value = d.prefSea || 3;
+
+            // טעינת מגבלת קומה גבוהה (Checkbox)
+            if (document.getElementById('in-limitHighFloor')) {
+                document.getElementById('in-limitHighFloor').checked = d.limitHighFloor || false;
+            }
+
             const urgentCheckbox = document.getElementById('in-isNotesUrgent');
             if (urgentCheckbox) {
                 urgentCheckbox.checked = d.isNotesUrgent || false;
@@ -130,7 +144,6 @@ async function init() {
 document.getElementById('btn-save-all').onclick = async () => {
     checkFollowUpStatus();
     
-    // שורות זיהוי - יודפסו לקונסול כדי שנראה מה undefined
     console.log("בדיקת משתנים לפני שמירה:");
     console.log("currentProperties:", currentProperties);
     console.log("currentFavorites:", window.currentFavorites);
@@ -145,18 +158,20 @@ document.getElementById('btn-save-all').onclick = async () => {
         isNotesUrgent: document.getElementById('in-isNotesUrgent')?.checked || false,
         followUpDate: document.getElementById('in-followUpDate')?.value || "",
         
+        // --- שדות ההעדפות (1-5) ---
         prefEdu: parseFloat(document.getElementById('in-prefEdu')?.value) || 3,
         prefTrans: parseFloat(document.getElementById('in-prefTrans')?.value) || 3,
         prefLeisure: parseFloat(document.getElementById('in-prefLeisure')?.value) || 3,
         prefSea: parseFloat(document.getElementById('in-prefSea')?.value) || 3,
         limitHighFloor: document.getElementById('in-limitHighFloor')?.checked || false,
 
+        // --- שדות האחוזים (עמלות) ---
         brokerageRateSale: parseFloat(document.getElementById('in-brokerageRateSale')?.value) || 0,
         brokerageRatePurch: parseFloat(document.getElementById('in-brokerageRatePurch')?.value) || 0,
         lawyerRateSale: parseFloat(document.getElementById('in-lawyerRateSale')?.value) || 0,
         lawyerRatePurch: parseFloat(document.getElementById('in-lawyerRatePurch')?.value) || 0,
 
-        // ההגנה הקריטית
+        // --- הגנה על רשימות ודירוגים ---
         properties: currentProperties || [],
         favorites: window.currentFavorites || [],
         ratings: currentRatings || {},
@@ -167,10 +182,16 @@ document.getElementById('btn-save-all').onclick = async () => {
     
     try {
         if (!clientID) throw new Error("Missing Client ID");
+        // עדכון המסמך ב-Firebase
         await updateDoc(doc(db, "projects", clientID), data);
+        
         alert("התיק נשמר בהצלחה! ✨");
+        
+        // איפוס מצב ה"שינויים לא שמורים"
         window.hasUnsavedChanges = false;
         document.getElementById('btn-save-all')?.classList.remove('unsaved');
+        document.getElementById('save-status').style.display = 'none';
+        
     } catch (e) {
         console.error("שגיאת שמירה מפורטת:", e);
         alert("שגיאה בשמירה: " + e.message);

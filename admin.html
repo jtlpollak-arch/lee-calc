@@ -471,7 +471,7 @@
             <input type="text" id="new-client-name-input" placeholder="למשל: ישראל ישראלי">
             
             <label>מספר טלפון:</label>
-            <input type="text" id="new-client-phone-input" placeholder="050-0000000">
+            <input type="text" id="new-client-phone-input" placeholder="050-0000000" oninput="formatPhone(this)">
 
             <div style="margin-top:20px;">
                 <button class="btn-add" id="confirm-create-client" style="width:100%;">שמירה והמשך 🏠</button>
@@ -494,10 +494,7 @@
     <script>
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.onclick = () => {
-                // הסרת אקטיביות מכולם
                 document.querySelectorAll('.tab-btn, .section-content').forEach(el => el.classList.remove('active'));
-                
-                // הוספת אקטיביות ללחוץ
                 btn.classList.add('active');
                 const sectionId = btn.id.replace('btn-show-', 'section-');
                 document.getElementById(sectionId).classList.add('active');
@@ -505,6 +502,7 @@
         });
     </script>
 
+    <script src="formatters.js"></script>
     <script type="module" src="admin-dashboard-logic.js"></script>
 </body>
 </html>
