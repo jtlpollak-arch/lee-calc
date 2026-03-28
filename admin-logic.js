@@ -7,20 +7,19 @@ const urlParams = new URLSearchParams(window.location.search);
 const clientID = urlParams.get('id');
 let currentProperties = [];
 let allBankProperties = []; 
-let selectedIDs = []; // המשתנה החדש לניהול הבחירה המרובה
+let selectedIDs = []; 
 let currentRatings = {};
 
 window.hasUnsavedChanges = false;
 
-// מפת דרכים: תרגום סטטוס למספר שלב עבור הלקוח
 const STATUS_TO_ROADMAP_STEP = {
     'INITIAL': '1',
     'RESEARCH': '2',
     'SIGNING': '3',
     'DELIVERY': '4',
     'DONE': '5',
-    'FROZEN': '6',   // הקפאה
-    'CANCELLED': '7' // בוטל
+    'FROZEN': '6',
+    'CANCELLED': '7'
 };
 
 async function logAction(msg) {
@@ -35,9 +34,6 @@ const markChanged = () => {
     if (saveStatus) saveStatus.style.display = 'block';
 };
 
-/**
- * עדכון ויזואלי של שדה ההערות ושדה המעקב
- */
 function updateUrgentUI() {
     const checkbox = document.getElementById('in-isNotesUrgent');
     const notesField = document.getElementById('in-privateNotes');
@@ -48,13 +44,9 @@ function updateUrgentUI() {
     checkFollowUpStatus();
 }
 
-/**
- * בדיקה האם תאריך המעקב הגיע או עבר
- */
 function checkFollowUpStatus() {
     const dateInput = document.getElementById('in-followUpDate');
     if (!dateInput || !dateInput.value) return;
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const followUpDate = new Date(dateInput.value);
@@ -73,52 +65,26 @@ function checkFollowUpStatus() {
 }
 
 async function init() {
-    console.log("Checking for Client ID:", clientID);
-    if (!clientID) {
-        console.error("No Client ID found in URL!");
-        return;
-    }
-
+    if (!clientID) return;
     try {
         const bankSnap = await getDocs(collection(db, "property_bank"));
-        allBankProperties = [];
-        bankSnap.forEach(s => {
-            allBankProperties.push({ id: s.id, ...s.data() });
-        });
+        allBankProperties = bankSnap.docs.map(s => ({ id: s.id, ...s.data() }));
 
         const snap = await getDoc(doc(db, "projects", clientID));
         if (snap.exists()) {
             const d = snap.data();
-            console.log("Client data loaded:", d);
             
-            // --- החלק החדש: הצגת סיכומי הסיורים בטעינה ראשונית ---
-            if (window.renderTourNotesForAdmin) {
-                window.renderTourNotesForAdmin(d.tourNotes);
-            }
-            // -------------------------------------
+            if (window.renderTourNotesForAdmin) window.renderTourNotesForAdmin(d.tourNotes);
 
             const nameDisp = document.getElementById('client-name-display');
             if (nameDisp) nameDisp.innerText = d.clientName || "לקוח ללא שם";
-            
-            if (document.getElementById('client-name-title')) {
-                document.getElementById('client-name-title').innerText = d.clientName || "לקוח ללא שם";
-            }
+            if (document.getElementById('client-name-title')) document.getElementById('client-name-title').innerText = d.clientName || "לקוח ללא שם";
+            if (document.getElementById('in-clientName')) document.getElementById('in-clientName').value = d.clientName || "";
 
             document.getElementById('in-status').value = d.status || "INITIAL";
             document.getElementById('in-clientPhone').value = FinanceLogic.formatPhone(d.clientPhone || "");
-
-            if (document.getElementById('in-clientBirthday')) {
-                document.getElementById('in-clientBirthday').value = d.clientBirthday || "";
-            }
-            
-            if (document.getElementById('in-clientEmail')) {
-                document.getElementById('in-clientEmail').value = d.clientEmail || "";
-            }
-            
-            if (document.getElementById('in-clientName')) {
-                document.getElementById('in-clientName').value = d.clientName || "";
-            }
-            
+            if (document.getElementById('in-clientBirthday')) document.getElementById('in-clientBirthday').value = d.clientBirthday || "";
+            if (document.getElementById('in-clientEmail')) document.getElementById('in-clientEmail').value = d.clientEmail || "";
             if(document.getElementById('in-clientNeeds')) document.getElementById('in-clientNeeds').value = d.clientNeeds || "";
             if(document.getElementById('in-privateNotes')) document.getElementById('in-privateNotes').value = d.privateNotes || "";
             if(document.getElementById('in-targetDate')) document.getElementById('in-targetDate').value = d.targetDate || "";
@@ -128,140 +94,81 @@ async function init() {
             if (urgentCheckbox) {
                 urgentCheckbox.checked = d.isNotesUrgent || false;
                 updateUrgentUI();
-                urgentCheckbox.addEventListener('change', () => {
-                    updateUrgentUI();
-                    markChanged();
-                });
+                urgentCheckbox.onchange = () => { updateUrgentUI(); markChanged(); };
             }
 
-            const followUpInput = document.getElementById('in-followUpDate');
-            if (followUpInput) {
-                followUpInput.addEventListener('change', () => {
-                    checkFollowUpStatus();
-                    markChanged();
-                });
-            }
-
-            document.getElementById('in-brokerageRateSale').value = d.brokerageRateSale !== undefined ? d.brokerageRateSale : 2;
-            document.getElementById('in-lawyerRateSale').value = d.lawyerRateSale !== undefined ? d.lawyerRateSale : 0.5;
-            document.getElementById('in-brokerageRatePurch').value = d.brokerageRatePurch !== undefined ? d.brokerageRatePurch : 2;
-            document.getElementById('in-lawyerRatePurch').value = d.lawyerRatePurch !== undefined ? d.lawyerRatePurch : 0.5;
+            document.getElementById('in-brokerageRateSale').value = d.brokerageRateSale ?? 2;
+            document.getElementById('in-lawyerRateSale').value = d.lawyerRateSale ?? 0.5;
+            document.getElementById('in-brokerageRatePurch').value = d.brokerageRatePurch ?? 2;
+            document.getElementById('in-lawyerRatePurch').value = d.lawyerRatePurch ?? 0.5;
             
-            if(document.getElementById('in-prefEdu')) document.getElementById('in-prefEdu').value = d.prefEdu !== undefined ? d.prefEdu : 3;
-            if(document.getElementById('in-prefTrans')) document.getElementById('in-prefTrans').value = d.prefTrans !== undefined ? d.prefTrans : 3;
-            if(document.getElementById('in-prefLeisure')) document.getElementById('in-prefLeisure').value = d.prefLeisure !== undefined ? d.prefLeisure : 3;
-            if(document.getElementById('in-prefSea')) document.getElementById('in-prefSea').value = d.prefSea !== undefined ? d.prefSea : 3;
-            if(document.getElementById('in-limitHighFloor')) document.getElementById('in-limitHighFloor').checked = d.limitHighFloor || false;
-
-            currentProperties = d.properties || [];
+            currentProperties = d.properties || d.assignedProperties || [];
             window.currentFavorites = d.favorites || [];
             currentRatings = d.ratings || {}; 
             
             renderAssigned();
 
-            document.querySelectorAll('input, select, textarea').forEach(el => {
-                el.addEventListener('input', markChanged);
-            });
-            
+            document.querySelectorAll('input, select, textarea').forEach(el => el.addEventListener('input', markChanged));
             window.hasUnsavedChanges = false;
-            if (document.getElementById('save-status')) document.getElementById('save-status').style.display = 'none';
-        } else {
-            alert("לא נמצאו נתונים עבור לקוח זה.");
         }
-    } catch (error) {
-        console.error("Error loading project data:", error);
-    }
+    } catch (error) { console.error("Error loading data:", error); }
 }
 
 document.getElementById('btn-save-all').onclick = async () => {
-    const saveBtn = document.getElementById('btn-save-all');
-    
-    // בדיקה אחרונה של תאריך לפני שמירה
     checkFollowUpStatus();
-
     const currentStatus = document.getElementById('in-status').value;
     
-    // גזירת שלב ה-Roadmap מהסטטוס שנבחר
-    const newRoadmapStep = STATUS_TO_ROADMAP_STEP[currentStatus];
-
+    // בניית האובייקט עם הגנות מפני ערכים ריקים (undefined)
     const data = {
-        clientName: document.getElementById('in-clientName') ? document.getElementById('in-clientName').value : (document.getElementById('client-name-display') ? document.getElementById('client-name-display').innerText : ""),
+        clientName: document.getElementById('in-clientName')?.value || (document.getElementById('client-name-display')?.innerText) || "",
         status: currentStatus,
-        clientPhone: document.getElementById('in-clientPhone').value,
-        clientBirthday: document.getElementById('in-clientBirthday') ? document.getElementById('in-clientBirthday').value : "",
-        clientEmail: document.getElementById('in-clientEmail') ? document.getElementById('in-clientEmail').value : "",
-        clientNeeds: document.getElementById('in-clientNeeds') ? document.getElementById('in-clientNeeds').value : "",
-        privateNotes: document.getElementById('in-privateNotes').value,
-        isNotesUrgent: document.getElementById('in-isNotesUrgent').checked,
-        targetDate: document.getElementById('in-targetDate') ? document.getElementById('in-targetDate').value : "",
-        followUpDate: document.getElementById('in-followUpDate').value,
-
-        // המרה למספרים עבור המחשבון
-        brokerageRateSale: parseFloat(document.getElementById('in-brokerageRateSale').value) || 0,
-        lawyerRateSale: parseFloat(document.getElementById('in-lawyerRateSale').value) || 0,
-        brokerageRatePurch: parseFloat(document.getElementById('in-brokerageRatePurch').value) || 0,
-        lawyerRatePurch: parseFloat(document.getElementById('in-lawyerRatePurch').value) || 0,
+        clientPhone: document.getElementById('in-clientPhone')?.value || "",
+        clientBirthday: document.getElementById('in-clientBirthday')?.value || "",
+        clientEmail: document.getElementById('in-clientEmail')?.value || "",
+        clientNeeds: document.getElementById('in-clientNeeds')?.value || "",
+        privateNotes: document.getElementById('in-privateNotes')?.value || "",
+        isNotesUrgent: document.getElementById('in-isNotesUrgent')?.checked || false,
+        targetDate: document.getElementById('in-targetDate')?.value || "",
+        followUpDate: document.getElementById('in-followUpDate')?.value || "",
+        brokerageRateSale: parseFloat(document.getElementById('in-brokerageRateSale')?.value) || 0,
+        lawyerRateSale: parseFloat(document.getElementById('in-lawyerRateSale')?.value) || 0,
+        brokerageRatePurch: parseFloat(document.getElementById('in-brokerageRatePurch')?.value) || 0,
+        lawyerRatePurch: parseFloat(document.getElementById('in-lawyerRatePurch')?.value) || 0,
         
-        // שמירת העדפות התאמה אישית
-        prefEdu: parseFloat(document.getElementById('in-prefEdu').value) || 3,
-        prefTrans: parseFloat(document.getElementById('in-prefTrans').value) || 3,
-        prefLeisure: parseFloat(document.getElementById('in-prefLeisure').value) || 3,
-        prefSea: parseFloat(document.getElementById('in-prefSea').value) || 3,
-        limitHighFloor: document.getElementById('in-limitHighFloor').checked,
+        // הגנה קריטית: אם המשתנה לא קיים, שלח מערך/אובייקט ריק במקום undefined
+        properties: currentProperties || [],
+        favorites: window.currentFavorites || [], 
+        ratings: currentRatings || {},
         
-        properties: currentProperties,
-        favorites: window.currentFavorites, 
-        ratings: currentRatings,
+        roadmapStep: STATUS_TO_ROADMAP_STEP[currentStatus] || "1",
         lastUpdated: new Date().toISOString()
     };
-
-    const now = new Date().toISOString();
-    // בדיקה אם קיים כבר timestamp ללקוח, אם לא - הוספה שלו (תאריך יצירה)
-    try {
-        const snap = await getDoc(doc(db, "projects", clientID));
-        if (snap.exists() && !snap.data().timestamp) {
-            data.timestamp = now;
-        }
-    } catch (e) { console.log("Timestamp check failed"); }
-
-    if (newRoadmapStep) {
-        data.roadmapStep = newRoadmapStep;
-    }
     
-    try {
-        await updateDoc(doc(db, "projects", clientID), data);
-        
-        // עדכון בנק הנכסים המרכזי לכל נכס ששונה בתיק כדי להוסיף את חותמת הזמן
-        for (const prop of currentProperties) {
-            const propId = prop.propertyId || prop.id;
-            if (propId) {
-                await updateDoc(doc(db, "property_bank", propId), {
-                    lastUpdated: now
-                });
-            }
-        }
+    console.log("ניסיון שמירה עם הנתונים הבאים:", data);
 
-        let logMsg = `✨ עודכן תיק לקוח: ${data.clientName} (סטטוס: ${currentStatus})`;
-        if (data.isNotesUrgent) logMsg += " [סומן כדחוף ⚠️]";
-        await logAction(logMsg);
+    try {
+        if (!clientID) throw new Error("Missing Client ID");
+        
+        await updateDoc(doc(db, "projects", clientID), data);
+        await logAction(`✨ עודכן תיק לקוח: ${data.clientName}`);
         
         window.hasUnsavedChanges = false;
+        const saveBtn = document.getElementById('btn-save-all');
         if (saveBtn) saveBtn.classList.remove('unsaved');
-        if (document.getElementById('save-status')) document.getElementById('save-status').style.display = 'none';
         
-        alert("התיק סונכרן בהצלחה! ציר הזמן של הלקוח עודכן.");
-    } catch (error) {
-        console.error("Save error:", error);
-        alert("שגיאה בשמירה. וודאי שאת מחוברת לאינטרנט.");
+        const saveStatus = document.getElementById('save-status');
+        if (saveStatus) saveStatus.style.display = 'none';
+        
+        alert("התיק סונכרן בהצלחה! ✨");
+    } catch (error) { 
+        console.error("שגיאת שמירה מפורטת:", error);
+        alert("שגיאה בשמירה: " + error.message); 
     }
 };
 
-// פונקציית העדכון החדשה שמתאימה לשינויים ב-HTML
 window.updatePropDate = (index, value) => {
     if (currentProperties[index]) {
         currentProperties[index].closingDate = value;
-        // הוספת חותמת זמן לעדכון פנימי של הנכס
-        currentProperties[index].lastUpdated = new Date().toISOString();
         markChanged();
     }
 };
@@ -269,229 +176,106 @@ window.updatePropDate = (index, value) => {
 window.updatePropRole = (index, value) => {
     if (currentProperties[index]) {
         currentProperties[index].clientRole = value;
-        // הוספת חותמת זמן לעדכון פנימי של הנכס
-        currentProperties[index].lastUpdated = new Date().toISOString();
         markChanged();
     }
 };
 
 function renderAssigned() {
-    const container = document.getElementById('assigned-props-container') || document.getElementById('assigned-props-list');
+    const container = document.getElementById('assigned-props-container');
     if (!container) return;
-
-    if (currentProperties.length === 0) {
-        container.innerHTML = `<div style="padding:20px; text-align:center; color:#888; border:1px dashed #ddd; border-radius:8px;">אין נכסים משויכים לתיק זה</div>`;
-        return;
-    }
-
     container.innerHTML = currentProperties.map((p, i) => {
-        const liveProp = allBankProperties.find(bp => 
-            (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
-        );
-
-        const currentAddr = liveProp ? liveProp.address : p.address;
-        const currentPrice = liveProp ? liveProp.price : p.price;
-        const currentCity = liveProp ? liveProp.city : (p.city || 'כללי');
-
-        const isFav = window.currentFavorites && window.currentFavorites.some(addr => addr.trim() === currentAddr.trim());
-        const favTag = isFav ? `<div class="fav-indicator" style="color:#e74c3c; font-size:12px; font-weight:bold;">❤️ אהבו את הנכס</div>` : '';
-
-        // נתוני העסקה הספציפיים לשיוך
-        const closingDate = p.closingDate || "";
-        const clientRole = p.clientRole || "BUYER";
-
+        const liveProp = allBankProperties.find(bp => bp.id === (p.propertyId || p.id));
+        const addr = liveProp ? liveProp.address : p.address;
         return `
-        <div class="assigned-prop" style="display: flex; flex-direction: column; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid #2c3e50;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div style="flex-grow:1;">
-                    <div style="font-weight:bold; font-size: 16px;">${currentAddr}</div>
-                    <div style="font-size:12px; color:#666;">
-                        ${currentCity} | ₪${FinanceLogic.formatNumber(currentPrice)} | ${p.rooms || '?'} חד'
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:15px;">
-                    ${favTag}
-                    <button onclick="window.remP(${i})" style="color:#e74c3c; background:none; border:1px solid #fed7d7; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">הסר</button>
-                </div>
+        <div class="assigned-prop" style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:10px; border-right:4px solid #2c3e50;">
+            <div style="font-weight:bold;">${addr}</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                <select onchange="window.updatePropRole(${i}, this.value)" class="text-xs p-1">
+                    <option value="BUYER" ${p.clientRole === 'BUYER' ? 'selected' : ''}>🔑 קונה</option>
+                    <option value="SELLER" ${p.clientRole === 'SELLER' ? 'selected' : ''}>🏠 מוכר</option>
+                </select>
+                <input type="date" value="${p.closingDate || ''}" onchange="window.updatePropDate(${i}, this.value)" class="text-xs p-1">
             </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
-                <div>
-                    <label style="font-size: 11px; margin-bottom: 3px;">תפקיד בעסקה:</label>
-                    <select onchange="window.updatePropRole(${i}, this.value)" style="padding: 5px; font-size: 12px; height: auto;">
-                        <option value="BUYER" ${clientRole === 'BUYER' ? 'selected' : ''}>🔑 קונה</option>
-                        <option value="SELLER" ${clientRole === 'SELLER' ? 'selected' : ''}>🏠 מוכר</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 11px; margin-bottom: 3px;">תאריך סגירה:</label>
-                    <input type="date" value="${closingDate}" onchange="window.updatePropDate(${i}, this.value)" style="padding: 4px; font-size: 12px; height: auto;">
-                </div>
-            </div>
-        </div>
-        `;
+            <button onclick="window.remP(${i})" style="color:red; font-size:10px; margin-top:10px;">הסר נכס</button>
+        </div>`;
     }).join('');
 }
 
-window.remP = (i) => { 
-    if (!currentProperties[i]) return;
-    const addrToRemove = currentProperties[i].address;
-
-    if (confirm(`האם להסיר את ${addrToRemove} מהתיק? (זה ינקה גם מועדפים ודירוגים)`)) {
-        currentProperties.splice(i, 1); 
-        if (window.currentFavorites) {
-            window.currentFavorites = window.currentFavorites.filter(f => 
-                f && f.trim() !== addrToRemove.trim()
-            );
-        }
-        if (currentRatings) {
-            Object.keys(currentRatings).forEach(key => {
-                if (key.trim() === addrToRemove.trim()) {
-                    delete currentRatings[key];
-                }
-            });
-        }
-        renderAssigned(); 
+window.remP = (i) => {
+    if (confirm("להסיר נכס?")) {
+        currentProperties.splice(i, 1);
+        renderAssigned();
         markChanged();
     }
 };
 
-const openBankBtn = document.getElementById('btn-open-bank') || document.querySelector('[onclick="window.openBankModal()"]');
-if (openBankBtn) {
-    openBankBtn.onclick = async () => {
-        const snap = await getDocs(collection(db, "property_bank"));
-        allBankProperties = [];
-        snap.forEach(s => {
-            const data = s.data();
-            allBankProperties.push({ id: s.id, ...data });
+/**
+ * פונקציה אחת ומעודכנת לניהול משימות ללוח "היום שלי"
+ * שומרת שם ומשימה בשדות נפרדים לתצוגה נכונה
+ */
+window.addAdminTaskFromClient = async () => {
+    const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+    const auth = getAuth();
+
+    // פונקציית עזר להמתנה לזיהוי המשתמש
+    const getCurrentUser = () => {
+        return new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe();
+                resolve(user);
+            });
         });
-
-        const modal = document.getElementById('bank-modal');
-        const listContainer = document.getElementById('bank-list-container') || document.getElementById('bank-list');
-        
-        selectedIDs = []; 
-
-        if (!document.getElementById('bank-search-input')) {
-            const searchInput = document.createElement('input');
-            searchInput.id = "bank-search-input";
-            searchInput.type = "text";
-            searchInput.placeholder = "חיפוש בבנק (רחוב או עיר)...";
-            searchInput.style = "width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;";
-            searchInput.oninput = (e) => renderBankList(e.target.value);
-            listContainer.parentElement.insertBefore(searchInput, listContainer);
-        } else {
-            document.getElementById('bank-search-input').value = ""; 
-        }
-        renderBankList();
-        modal.style.display = 'block';
     };
-    window.openBankModal = openBankBtn.onclick;
-}
 
-function renderBankList(filterTerm = "") {
-    const list = document.getElementById('bank-list-container') || document.getElementById('bank-list');
-    list.innerHTML = "";
-    const term = filterTerm.toLowerCase();
-    
-    const assignedAddresses = currentProperties.map(p => p.address);
-    const filtered = allBankProperties.filter(d => {
-        const matchesSearch = d.address.toLowerCase().includes(term) || (d.city && d.city.toLowerCase().includes(term));
-        return matchesSearch && !assignedAddresses.includes(d.address);
-    });
+    let user = auth.currentUser || await getCurrentUser();
 
-    if (filtered.length === 0) {
-        list.innerHTML = `<div style="padding:20px; text-align:center; color:#888;">לא נמצאו נכסים חדשים לשיוך</div>`;
+    if (!user) {
+        alert("נראה שפג תוקף החיבור שלך. אנא חזור לדף הראשי (Dashboard) והיכנס שוב.");
         return;
     }
 
-    filtered.forEach(d => {
-        const isSelected = selectedIDs.includes(d.id);
-        const div = document.createElement('div');
-        div.className = "bank-item" + (isSelected ? " selected" : "");
-        div.style = `padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer; transition: 0.2s; ${isSelected ? 'background:#fff9e6; border:1px solid #FFD700;' : ''}`;
-        
-        div.innerHTML = `
-            <div style="font-weight:bold;">${d.address}</div>
-            <div style="font-size:13px; color:#666;">
-                ${d.city || 'כללי'} | <span style="color:#27ae60; font-weight:bold;">₪${FinanceLogic.formatNumber(d.price)}</span>
-            </div>
-        `;
+    const taskText = prompt("מה המשימה לביצוע עבור לקוח זה?");
+    if (!taskText) return;
 
-        div.onclick = () => { 
-            if (selectedIDs.includes(d.id)) {
-                selectedIDs = selectedIDs.filter(id => id !== d.id);
-            } else {
-                selectedIDs.push(d.id);
-            }
-            renderBankList(document.getElementById('bank-search-input') ? document.getElementById('bank-search-input').value : "");
-        };
-        list.appendChild(div);
-    });
-}
+    const taskDate = prompt("עבור איזה תאריך? (YYYY-MM-DD)", new Date().toISOString().split('T')[0]);
+    if (!taskDate) return;
 
-const confirmBtn = document.getElementById('btn-confirm-selection');
-if (confirmBtn) {
-    confirmBtn.onclick = () => {
-        if (selectedIDs.length === 0) {
-            alert("לא נבחרו נכסים לשיוך.");
-            return;
-        }
+    try {
+        const clientName = document.getElementById('in-clientName')?.value || "לקוח כללי";
+        const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
-        const now = new Date().toISOString();
-
-        selectedIDs.forEach(id => {
-            const propData = allBankProperties.find(p => p.id === id);
-            if (propData) {
-                const propWithId = { 
-                    ...propData, 
-                    propertyId: id,
-                    // הוספת חותמת זמן לשיוך החדש בתוך הלקוח
-                    timestamp: now,
-                    lastUpdated: now
-                };
-                currentProperties.push(propWithId);
-            }
+        await addDoc(collection(db, "admin_tasks"), {
+            clientName: clientName,
+            taskContent: taskText,
+            text: `${clientName}: ${taskText}`,
+            dueDate: taskDate,
+            isDone: false,
+            timestamp: new Date().toISOString(),
+            createdBy: user.email
         });
 
-        renderAssigned();
-        markChanged();
-        document.getElementById('bank-modal').style.display = 'none';
-    };
-}
-
-init();
-
-document.addEventListener('DOMContentLoaded', init);
-
-document.getElementById('in-clientPhone').oninput = (e) => {
-    e.target.value = FinanceLogic.formatPhone(e.target.value);
-    markChanged();
-};
-
-// פונקציית רענון הנתונים מהשטח (כדי שהכפתור ב-HTML יעבוד)
-window.manualRefreshTourNotes = async () => {
-    if (!clientID) return;
-    const btn = document.querySelector('[onclick="window.manualRefreshTourNotes()"]');
-    const originalText = btn ? btn.innerHTML : '🔄 רענון נתונים מהשטח';
-    
-    try {
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '🔄 טוען...';
-        }
-        
-        const snap = await getDoc(doc(db, "projects", clientID));
-        if (snap.exists()) {
-            const d = snap.data();
-            if (window.renderTourNotesForAdmin) {
-                window.renderTourNotesForAdmin(d.tourNotes || {});
-            }
-        }
-    } catch (e) { console.error(e); }
-    finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+        alert("🎯 המשימה נוספה ללוח 'היום שלי' בהצלחה!");
+    } catch (e) {
+        console.error("FIREBASE ERROR:", e);
+        alert("שגיאה בשמירה: " + e.message);
     }
 };
+
+window.manualRefreshTourNotes = async () => {
+    if (!clientID) return;
+    const snap = await getDoc(doc(db, "projects", clientID));
+    if (snap.exists()) window.renderTourNotesForAdmin?.(snap.data().tourNotes || {});
+};
+
+window.handleGoBack = () => {
+    if (window.hasUnsavedChanges) {
+        if (confirm("שינויים לא נשמרו. לסגור את החלון בכל זאת?")) {
+            window.close(); // סוגר את הטאב
+        }
+    } else {
+        window.close(); // סוגר את הטאב
+    }
+};
+
+init();
+document.addEventListener('DOMContentLoaded', init);

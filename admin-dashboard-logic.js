@@ -207,9 +207,9 @@ function initAllSnapshots() {
                             </div>
                         </td>
                         <td style="vertical-align: top;">
-                            <button class="btn-action btn-whatsapp" onclick="window.sendWA('${d.id}', '${d.clientName}', '${d.clientPhone || ''}')">WhatsApp 💬</button>
-                            <a href="${clientPortalUrl}" target="_blank" class="btn-action btn-view-client">צפיית לקוח 👁️</a>
-                            <a href="edit-project.html?id=${d.id}" class="btn-action" style="background: black; color: #FFD700; font-weight: bold; border: 1px solid #FFD700;">ניהול תיק נכסים 🏠</a>
+                            <button class="btn-action btn-whatsapp" onclick="window.sendWA('${d.id}', '${d.clientName}', '${d.clientPhone || ''}')">💬 WhatsApp</button>
+                            <a href="edit-project.html?id=${d.id}" target="_blank" class="btn-action" style="background: black; color: #FFD700; font-weight: bold; border: 1px solid #FFD700;">🏠 ניהול לקוח</a>
+                            <a href="${clientPortalUrl}" target="_blank" class="btn-action btn-view-client">👁️ צפיית לקוח</a>
                             <button class="btn-action btn-del" onclick="window.delCl('${d.id}', '${d.clientName}')">מחיקה</button>
                         </td>
                     </tr>`;

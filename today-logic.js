@@ -9,13 +9,11 @@ import { firebaseConfig } from './firebase-config.js';
  */
 const auth = getAuth(initializeApp(firebaseConfig));
 
-// אנחנו לא קוראים ל-initToday כאן למטה, אלא רק בתוך ה-onAuthStateChanged
 onAuthStateChanged(auth, (user) => {
     if (!user) {
         window.location.href = 'login.html';
     } else {
         console.log("משתמש מחובר ומאומת: " + user.email);
-        // רק כאן מתחילה הטעינה של הנתונים
         initToday();
     }
 });
@@ -32,23 +30,41 @@ let tokenClient, gapiInited = false, gisInited = false;
  */
 function checkBirthdayStatus(dateVal) {
     if (!dateVal) return false;
+    
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
-    const tDay = now.getDate(), tMonth = now.getMonth() + 1;
-    const mDay = tomorrow.getDate(), mMonth = tomorrow.getMonth() + 1;
+    
+    const tDay = now.getDate();
+    const tMonth = now.getMonth() + 1;
+    const mDay = tomorrow.getDate();
+    const mMonth = tomorrow.getMonth() + 1;
+    
     let bDay, bMonth;
-    if (dateVal.toDate) {
-        const d = dateVal.toDate();
-        bDay = d.getDate(); bMonth = d.getMonth() + 1;
-    } else {
-        const parts = dateVal.toString().split(/[-/.]/);
-        if (parts.length >= 2) {
-            if (parts[0].length === 4) { bMonth = parseInt(parts[1]); bDay = parseInt(parts[2]); }
-            else { bDay = parseInt(parts[0]); bMonth = parseInt(parts[1]); }
+
+    try {
+        if (dateVal.toDate) {
+            const d = dateVal.toDate();
+            bDay = d.getDate();
+            bMonth = d.getMonth() + 1;
+        } else {
+            const parts = dateVal.toString().split(/[-/.]/);
+            if (parts.length >= 2) {
+                if (parts[0].length === 4) { 
+                    bMonth = parseInt(parts[1]); 
+                    bDay = parseInt(parts[2]); 
+                } else { 
+                    bDay = parseInt(parts[0]); 
+                    bMonth = parseInt(parts[1]); 
+                }
+            }
         }
+        if (bDay === tDay && bMonth === tMonth) return 'today';
+        if (bDay === mDay && bMonth === mMonth) return 'tomorrow';
+    } catch (e) {
+        console.error("Birthday Format Error:", e);
     }
-    return (bDay === tDay && bMonth === tMonth) ? 'today' : (bDay === mDay && bMonth === mMonth ? 'tomorrow' : false);
+    return false;
 }
 
 function celebrate() {
@@ -61,9 +77,6 @@ function celebrate() {
     }());
 }
 
-/**
- * אתחול המערכת - קורה רק לאחר שהמשתמש אומת
- */
 async function initToday() {
     try {
         const settingsSnap = await getDoc(doc(db, "settings", "google_config"));
@@ -77,22 +90,29 @@ async function initToday() {
         }
     } catch (e) { console.error("Setting Load Error:", e); }
     
-    // רענון נתונים ראשוני
     await refreshAllData(); 
     setupLocalTasks();
-    
-    // רענון אוטומטי
     setInterval(refreshAllData, 300000);
 }
 
+/**
+ * רענון נתונים חכם: מרענן תמיד את Firebase, 
+ * ומרענן את גוגל רק אם כבר קיים טוקן פעיל (מונע קפיצת חלונות).
+ */
 async function refreshAllData() {
-    // הגנה: אל תנסה למשוך נתונים אם המשתמש התנתק פתאום
     if (!auth.currentUser) return;
 
+    // רענון Firebase תמיד
     await fetchFirebaseData();
     await fetchNewProperties();
+
+    // רענון גוגל רק אם מחובר
     if (gapiInited && gapi.client.getToken()) {
-        listUpcomingEvents();
+        try {
+            await listUpcomingEvents();
+        } catch (e) {
+            console.log("Google refresh failed quietly:", e);
+        }
     } else {
         renderLoginPrompt();
     }
@@ -100,8 +120,11 @@ async function refreshAllData() {
 
 async function fetchFirebaseData() {
     const tasksList = document.getElementById('tasks-list');
-    const bdayCountElem = document.getElementById('today-birthdays'), signingElem = document.getElementById('stats-signing');
-    const revenueElem = document.getElementById('stats-revenue'), stuckList = document.getElementById('stuck-clients-list');
+    const bdayCountElem = document.getElementById('today-birthdays');
+    const signingElem = document.getElementById('stats-signing');
+    const revenueElem = document.getElementById('stats-revenue');
+    const stuckList = document.getElementById('stuck-clients-list');
+    
     if (!tasksList) return;
 
     try {
@@ -111,20 +134,19 @@ async function fetchFirebaseData() {
         let bCount = 0, sCount = 0, rev = 0;
         let bHtml = "", tHtml = "", sHtml = "";
 
-        // 1. משיכת משימות ניהול ידניות בלבד (admin_tasks)
         const adminTasksSnap = await getDocs(query(collection(db, "admin_tasks"), where("dueDate", "<=", todayStr)));
         adminTasksSnap.forEach(tDoc => {
             const tData = tDoc.data();
             if (!tData.isDone) {
-                tHtml += createTaskHTML(tData.text, 'ADMIN_TASK', tDoc.id, '', '');
+                const name = tData.clientName || "";
+                const content = tData.taskContent || tData.text;
+                const displayText = name ? `<strong class="gold-text ml-1">${name}:</strong> ${content}` : content;
+                tHtml += createTaskHTML(displayText, 'ADMIN_TASK', tDoc.id, '', '');
             }
         });
 
-        // 2. משיכת ימי הולדת וסטטיסטיקה בלבד (ללא יצירת משימות "מעקב" או "חתימה" אוטומטיות)
         querySnapshot.forEach((doc) => {
             const data = doc.data(), id = doc.id, phone = data.clientPhone || '';
-            
-            // ימי הולדת (נשאר כי זה מבוסס תאריך קשיח)
             const bStatus = checkBirthdayStatus(data.clientBirthday);
             if (bStatus === 'today') { 
                 bCount++; 
@@ -134,14 +156,12 @@ async function fetchFirebaseData() {
                 bHtml += createTaskHTML(`⏳ מחר יום הולדת: ${data.clientName}`, 'TOMORROW_BDAY', id, phone, `מחר יום הולדת!`); 
             }
             
-            // עדכון מונים לסטטיסטיקה (נשאר בשביל המספרים למעלה, לא מייצר משימה)
             if (data.status === "SIGNING" || data.roadmapStep === "3") {
                 sCount++;
                 let price = parseFloat(String(data.salePrice || 0).replace(/[^\d.]/g, '')) || 0;
                 rev += (price * (parseFloat(data.brokerageRatePurch || 2) / 100));
             }
 
-            // לקוחות תקועים (נשאר כי זה מופיע בנפרד למטה)
             const last = data.timestamp || data.lastUpdated;
             if (last && data.status !== 'DONE' && data.status !== 'CANCELLED') {
                 const lDate = last.toDate ? last.toDate() : new Date(last);
@@ -158,7 +178,6 @@ async function fetchFirebaseData() {
         if (revenueElem) revenueElem.innerText = '₪' + Math.floor(rev).toLocaleString();
         if (stuckList) stuckList.innerHTML = sHtml || `<div class="text-green-500/50 text-[10px] italic text-right">הכל מטופל! ✨</div>`;
         
-        // הצגת משימות: רק ימי הולדת ומשימות מהטבלה
         tasksList.innerHTML = (bHtml + tHtml) || `<div class="text-gray-600 text-center py-12 italic text-sm text-right">אין משימות.</div>`;
         updateDayProgress();
     } catch (e) { console.error("Firebase Error:", e); }
@@ -207,7 +226,7 @@ function createTaskHTML(text, type, id, phone, waMsg) {
     const waStyle = phone ? "" : "display:none;";
     const folderStyle = id && type !== 'ADMIN_TASK' ? "" : "display:none;";
     
-    return `<div class="task-item-container flex items-center gap-3 p-4 border rounded-xl ${c} mb-3 text-right"><input type="checkbox" onchange="window.toggleTask(this, '${id}', '${type}')" class="w-5 h-5 accent-yellow-500 cursor-pointer"><div class="flex-grow text-sm font-bold text-right">${text}<div class="flex gap-4 mt-2 justify-end"><a href="edit-project.html?id=${id}" target="_parent" class="text-[10px] text-gray-500 underline" style="${folderStyle}">תיק</a><a href="${wa}" target="_blank" class="text-[10px] text-green-500 font-bold" style="${waStyle}">WhatsApp</a></div></div></div>`;
+    return `<div class="task-item-container flex items-center gap-3 p-4 border rounded-xl ${c} mb-3 text-right"><input type="checkbox" onchange="window.toggleTask(this, '${id}', '${type}')" class="w-5 h-5 accent-yellow-500 cursor-pointer"><div class="flex-grow text-sm text-right">${text}<div class="flex gap-4 mt-2 justify-end"><a href="edit-project.html?id=${id}" target="_blank" class="text-[10px] text-gray-500 underline" style="${folderStyle}">תיק</a><a href="${wa}" target="_blank" class="text-[10px] text-green-500 font-bold" style="${waStyle}">WhatsApp</a></div></div></div>`;
 }
 
 function setupLocalTasks() {
@@ -217,13 +236,15 @@ function setupLocalTasks() {
             const taskText = input.value.trim();
             try {
                 await addDoc(collection(db, "admin_tasks"), {
-                    text: taskText,
+                    taskContent: taskText,
+                    clientName: "כללי",
+                    text: `כללי: ${taskText}`,
                     dueDate: new Date().toISOString().split('T')[0],
                     isDone: false,
                     timestamp: new Date().toISOString()
                 });
                 input.value = ""; 
-                await fetchFirebaseData(); 
+                await refreshAllData(); 
             } catch (e) { console.error(e); }
         } 
     };
@@ -248,7 +269,7 @@ window.handleAuthClick = () => tokenClient.requestAccessToken({prompt: 'consent'
 function renderLoginPrompt() {
     const content = document.getElementById('calendar-content');
     if (!content) return;
-    content.innerHTML = `<div class="flex flex-col items-center justify-center p-8 text-center bg-yellow-500/5 rounded-3xl border border-yellow-500/20 mt-4"><div class="text-4xl mb-4">✨</div><h3 class="text-white font-bold mb-2 text-right">שלום לי, ברוכה הבאה</h3><p class="text-[10px] text-gray-400 mb-6 leading-relaxed px-4 text-right">כדי לצפות ביומן הפגישות שלך, אנא בצעי חיבור לגוגל.</p><button onclick="handleAuthClick()" class="bg-yellow-500 text-black font-bold py-2 px-8 rounded-full text-xs hover:bg-yellow-400 transition-all shadow-lg">סנכרון יומן גוגל</button></div>`;
+    content.innerHTML = `<div class="flex flex-col items-center justify-center p-8 text-center bg-yellow-500/5 rounded-3xl border border-yellow-500/20 mt-4"><div class="text-4xl mb-4">✨</div><h3 class="text-white font-bold mb-2 text-right">לי היקרה, שלום!</h3><p class="text-[10px] text-gray-400 mb-6 leading-relaxed px-4 text-right">כדי לצפות ביומן הפגישות שלך, אנא בצעי חיבור לגוגל.</p><button onclick="handleAuthClick()" class="bg-yellow-500 text-black font-bold py-2 px-8 rounded-full text-xs hover:bg-yellow-400 transition-all shadow-lg">סנכרון יומן גוגל</button></div>`;
 }
 
 async function listUpcomingEvents() {
@@ -272,13 +293,19 @@ async function listUpcomingEvents() {
                 const start = new Date(e.start.dateTime || e.start.date), time = start.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
                 const isToday = (i === 0), diffMins = Math.floor((start - now) / 60000);
                 let st = isToday ? (diffMins > 0 && diffMins < 60 ? `<span class="text-[9px] text-yellow-500 animate-pulse block font-bold">בעוד ${diffMins} דק'</span>` : (diffMins <= 0 && diffMins > -60 ? `<span class="text-[9px] text-red-500 font-bold block">עכשיו!</span>` : "")) : "";
+                
+                let displaySummary = e.summary || "ללא כותרת";
+                if (displaySummary.includes(':')) {
+                    const parts = displaySummary.split(':');
+                    displaySummary = `<strong class="text-white">${parts[1].trim()}:</strong> <span class="opacity-80">${parts[0].trim()}</span>`;
+                }
+
                 const sAttendee = e.attendees?.find(a => a.self);
                 const sColor = sAttendee?.responseStatus === 'accepted' ? 'bg-green-500' : 'bg-gray-500';
                 let icon = e.summary?.includes("סיור") ? "🏠" : (e.summary?.includes("חתימה") ? "🖊️" : (e.summary?.includes("שיחה") ? "📞" : "📅"));
 
                 return `
                 <div class="dark-card p-3 rounded-xl mb-2 border-r-4 ${isToday ? 'border-yellow-500' : 'border-gray-800'} transition-all flex items-center dir-rtl text-right">
-                    
                     <div class="w-20 flex-shrink-0 flex flex-col items-center justify-center border-l border-white/10 pl-2 ml-2">
                         <div class="text-[12px] font-bold text-blue-400">${time}</div>
                         ${st}
@@ -288,15 +315,13 @@ async function listUpcomingEvents() {
                                 📍 ניווט
                             </a>` : ""}
                     </div>
-
-                    <div class="flex-grow pr-2 overflow-hidden">
+                    <div class="flex-grow pr-2 overflow-hidden text-right">
                         <div class="flex items-center justify-start gap-2 mb-0.5">
                             <span class="text-xs opacity-70">${icon}</span>
-                            <div class="text-sm text-white font-bold truncate">${e.summary || "ללא כותרת"}</div>
+                            <div class="text-sm truncate">${displaySummary}</div>
                         </div>
                         ${e.location ? `<div class="text-[10px] text-gray-400 truncate italic">${e.location}</div>` : ""}
                     </div>
-
                     <div class="w-1.5 h-1.5 rounded-full ${sColor} flex-shrink-0 mr-auto ml-1"></div>
                 </div>`;
             }).join('');
@@ -310,11 +335,32 @@ window.openEventModal = () => {
     document.getElementById('event-modal').style.display = 'block';
 };
 window.closeEventModal = () => { document.getElementById('event-modal').style.display = 'none'; };
+
 window.saveEventToGoogle = async () => {
     if (!gapiInited || !gapi.client.getToken()) return alert("נא לבצע סנכרון.");
     const t = document.getElementById('event-title').value, d = document.getElementById('event-date').value, tm = document.getElementById('event-time').value;
+    const type = document.getElementById('event-type').value;
     if (!t || !d || !tm) return alert("מלאי את כל השדות.");
     const start = new Date(`${d}T${tm}:00`);
-    const ev = { 'summary': `${document.getElementById('event-type').value}: ${t}`, 'location': document.getElementById('event-location').value, 'start': { 'dateTime': start.toISOString(), 'timeZone': 'Asia/Jerusalem' }, 'end': { 'dateTime': new Date(start.getTime() + 3600000).toISOString(), 'timeZone': 'Asia/Jerusalem' } };
+    
+    const ev = { 
+        'summary': `${type}: ${t}`, 
+        'location': document.getElementById('event-location').value, 
+        'start': { 'dateTime': start.toISOString(), 'timeZone': 'Asia/Jerusalem' }, 
+        'end': { 'dateTime': new Date(start.getTime() + 3600000).toISOString(), 'timeZone': 'Asia/Jerusalem' } 
+    };
     try { await gapi.client.calendar.events.insert({ 'calendarId': 'primary', 'resource': ev }); alert("האירוע נוצר! ✨"); window.closeEventModal(); listUpcomingEvents(); } catch (e) { console.error(e); }
 };
+
+/**
+ * מנגנון רענון אוטומטי בעת חזרה לטאב
+ */
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        refreshAllData();
+    }
+});
+
+window.addEventListener('focus', () => {
+    refreshAllData();
+});
