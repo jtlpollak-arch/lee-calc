@@ -285,11 +285,15 @@ function renderProviders(providersArray) {
     const tbody = document.getElementById('providers-tbody');
     if (!tbody) return;
     tbody.innerHTML = "";
+    
     providersArray.forEach(p => {
+        // התיקון: הוספת || "" מבטיחה שאם p.phone הוא undefined, הפונקציה תקבל טקסט ריק
+        const displayPhone = window.formatPhone(p.phone || "");
+
         tbody.innerHTML += `<tr>
             <td style="font-weight:bold; color:#FFD700;">${p.name}</td>
             <td><span style="background:#222; padding:4px 10px; border-radius:4px; font-size:13px;">${p.category}</span></td>
-            <td>${p.phone}</td>
+            <td style="white-space:nowrap; direction: ltr; text-align: right;">${displayPhone}</td>
             <td style="max-width:300px; font-size:13px; color:#ccc;">${p.description || '-'}</td>
             <td>
                 <button class="btn-action btn-del" onclick="window.delProvider('${p.id}', '${p.name}')">מחיקה</button>
@@ -305,16 +309,23 @@ if (saveProviderBtn) {
         const category = document.getElementById('prov-category').value;
         const phone = document.getElementById('prov-phone').value;
         const description = document.getElementById('prov-desc').value;
+        
         if (!name || !phone) return alert("חובה למלא שם וטלפון");
+        
         try {
             await addDoc(collection(db, "service_providers"), {
-                name, category, phone, description,
+                name, 
+                category, 
+                phone: window.cleanPhone(phone), 
+                description,
                 timestamp: new Date().toISOString()
             });
+            
             await logAction(`🛠️ נוסף איש מקצוע לנבחרת: ${name} (${category})`);
             document.getElementById('provider-modal').style.display = 'none';
             ['prov-name', 'prov-phone', 'prov-desc'].forEach(id => document.getElementById(id).value = "");
         } catch (e) {
+            console.error("Error saving provider:", e);
             alert("שגיאה בשמירת איש המקצוע");
         }
     };
@@ -725,8 +736,8 @@ document.getElementById('confirm-create-client').onclick = async () => {
 };
 
 document.getElementById('open-new-prop-modal').onclick = () => {
-    document.getElementById('edit-prop-id').value = "";
-    document.getElementById('prop-modal').style.display = 'block';
+    window.clearPropertyModal(); // הפעלת הניקוי
+    document.getElementById('prop-modal').style.display = 'block'; // פתיחת המודאל
 };
 
 document.getElementById('master-reset-db').onclick = async () => {
@@ -740,4 +751,30 @@ document.getElementById('master-reset-db').onclick = async () => {
         }
         window.location.reload();
     }
+};
+
+window.clearPropertyModal = () => {
+    console.log("Cleaning modal fields..."); // לבדיקה בקונסול
+    
+    // רשימת ה-IDs של כל השדות
+    const fields = [
+        'edit-prop-id', 'p-address', 'p-city-select', 'p-type', 'p-price', 
+        'p-rooms', 'p-floor', 'p-sqm', 'p-distTrain', 'p-status', 
+        'p-scoreEdu', 'p-scoreTrans', 'p-scoreLeisure', 'p-scoreSea', 'p-distSea', 
+        'p-link', 'p-leeTip', 'p-ai-analysis'
+    ];
+    
+    // איפוס שדות טקסט, מספר וסלקט
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    // איפוס צ'קבוקס
+    const featured = document.getElementById('p-featured');
+    if (featured) featured.checked = false;
+
+    // איפוס כותרת המודאל למצב "נכס חדש"
+    const modalTitle = document.getElementById('prop-modal-title');
+    if (modalTitle) modalTitle.innerText = "הוספת נכס חדש לבנק";
 };

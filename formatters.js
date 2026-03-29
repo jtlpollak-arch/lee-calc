@@ -1,29 +1,56 @@
 // formatters.js
 window.formatPhone = function(input) {
-    if (!input) return;
+    // 1. חילוץ הערך: אם זה אלמנט HTML קח את ה-value, אם לא - התייחס לזה כטקסט
+    let val = (input && input.value !== undefined) ? input.value : (input || "");
     
-    // ניקוי תווים שאינם מספרים
-    let value = input.value.replace(/\D/g, '');
+    // 2. ניקוי תווים שאינם מספרים (הפיכה למחרוזת ליתר ביטחון)
+    let cleaned = val.toString().replace(/\D/g, '');
     
-    // הגבלה ל-10 ספרות
-    value = value.substring(0, 10);
+    // 3. הגבלה ל-10 ספרות
+    cleaned = cleaned.substring(0, 10);
     
+    // 4. בניית הפורמט 05x-xxx-xxxx
     let finalValue = "";
-    if (value.length > 0) {
-        finalValue = value.substring(0, 3);
-        if (value.length > 3) {
-            finalValue += '-' + value.substring(3, 6);
+    if (cleaned.length > 0) {
+        finalValue = cleaned.substring(0, 3);
+        if (cleaned.length > 3) {
+            finalValue += '-' + cleaned.substring(3, 6);
         }
-        if (value.length > 6) {
-            finalValue += '-' + value.substring(6, 10);
+        if (cleaned.length > 6) {
+            finalValue += '-' + cleaned.substring(6, 10);
         }
     }
     
-    input.value = finalValue;
+    // 5. החזרה ליעד הנכון:
+    if (input && input.value !== undefined) {
+        // אם זה Input - עדכן את השדה על המסך
+        input.value = finalValue;
+    } else {
+        // אם זה לשימוש בטבלה - החזר את הטקסט המעובד
+        return finalValue;
+    }
 };
-
 
 window.cleanPhone = function(phoneStr) {
     if (!phoneStr) return "";
     return phoneStr.replace(/\D/g, ''); // מסיר כל תו שאינו מספר
+};
+
+
+window.formatNumberWithCommas = function(input) {
+    // 1. חילוץ הערך (מתוך Input או כמחרוזת ישירה)
+    let val = (input && input.value !== undefined) ? input.value : (input || "");
+    
+    // 2. ניקוי כל מה שאינו מספר
+    let cleaned = val.toString().replace(/\D/g, '');
+    
+    // 3. הוספת פסיקים (שימוש ב-Regex חכם שמפריד כל 3 ספרות)
+    let formatted = cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    // 4. החזרה ליעד הרלוונטי
+    if (input && input.value !== undefined) {
+        input.value = formatted;
+    } else {
+        return formatted;
+    }
 };

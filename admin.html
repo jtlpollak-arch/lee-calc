@@ -254,7 +254,7 @@
                     </select>
                     <input type="text" id="bank-search-input" placeholder="חפשי רחוב..." style="width:180px; margin:0;">
                 </div>
-                <button class="btn-add" id="open-new-prop-modal">נכס חדש +</button>
+                <button class="btn-add" id="open-new-prop-modal" onclick="clearPropertyModal(); document.getElementById('prop-modal').style.display='block'">נכס חדש +</button>
             </div>
             <table><thead><tr><th>כתובת ועיר</th><th>מחיר</th><th>מפרט / מדדים</th><th>פעולות</th></tr></thead><tbody id="props-tbody"></tbody></table>
         </div>
@@ -370,7 +370,7 @@
                     </select>
                     
                     <label>מחיר מבוקש (₪):</label>
-                    <input type="text" id="p-price" class="format-num-admin">
+                    <input type="text" id="p-price" oninput="formatNumberWithCommas(this)">
                     
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
                         <div><label>חדרים:</label><input type="number" id="p-rooms" step="0.5"></div>
@@ -452,7 +452,7 @@
                 <option value="אחר">✨ אחר</option>
             </select>
             <label>מספר טלפון:</label>
-            <input type="text" id="prov-phone" placeholder="05x-xxxxxxx">
+            <input type="text" id="prov-phone" placeholder="05x-xxxxxxx" oninput="formatPhone(this)">
             <label>תיאור / המלצה קצרה:</label>
             <textarea id="prov-desc" placeholder="מה הלקוח צריך לדעת עליו?" rows="3"></textarea>
             <div style="margin-top:20px;">
