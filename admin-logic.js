@@ -269,7 +269,13 @@ window.addAdminTaskFromClient = async () => {
     const taskText = prompt("מה המשימה לביצוע עבור לקוח זה?");
     if (!taskText) return;
 
-    const taskDate = prompt("עבור איזה תאריך? (YYYY-MM-DD)", new Date().toISOString().split('T')[0]);
+    // יצירת תאריך ברירת מחדל נכון לפי שעון ישראל
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localToday = (new Date(now - offset)).toISOString().split('T')[0];
+
+    const taskDate = prompt("עבור איזה תאריך? (YYYY-MM-DD)", localToday);
+    
     if (!taskDate) return;
 
     try {

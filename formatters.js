@@ -54,3 +54,27 @@ window.formatNumberWithCommas = function(input) {
         return formatted;
     }
 };
+
+
+// פונקציה לעיצוב תאריך ושעה לפורמט ישראלי
+window.formatDateTime = function(isoString, includeTime = true) {
+    if (!isoString) return "";
+    
+    const date = new Date(isoString);
+    
+    // בדיקה אם התאריך תקין
+    if (isNaN(date.getTime())) return isoString;
+
+    const options = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    };
+
+    if (includeTime) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+    }
+
+    return date.toLocaleString('he-IL', options).replace(',', '');
+};

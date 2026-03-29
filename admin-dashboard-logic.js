@@ -94,17 +94,21 @@ function initAllSnapshots() {
         
         let urgentCount = 0;
         allCurrentClients = [];
-        const today = new Date();
-        today.setHours(0,0,0,0);
+
+        // --- תיקון שעון ישראל: קבלת התאריך המקומי (YYYY-MM-DD) ללא תלות בשעון UTC ---
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000; // הפרש דקות במילישניות
+        const todayStr = (new Date(now - offset)).toISOString().split('T')[0];
         
         snap.forEach(s => {
             const d = s.data();
             let isActuallyUrgent = d.isNotesUrgent || false;
             
+            // בדיקת דחיפות לפי תאריך מעקב (השוואה טקסטואלית של YYYY-MM-DD היא הכי בטוחה)
             if (d.followUpDate) {
-                const fDate = new Date(d.followUpDate);
-                fDate.setHours(0,0,0,0);
-                if (fDate <= today) isActuallyUrgent = true;
+                if (d.followUpDate <= todayStr) {
+                    isActuallyUrgent = true;
+                }
             }
 
             allCurrentClients.push({ id: s.id, ...d, computedUrgent: isActuallyUrgent });
@@ -126,9 +130,12 @@ function initAllSnapshots() {
                 const matchesSearch = !clientSearchTerm || d.clientName.toLowerCase().includes(clientSearchTerm);
 
                 if (matchesUrgent && matchesSearch) {
+                    // עיצוב תאריך התזכורת לתצוגה יפה (DD/MM/YYYY)
+                    const displayFollowUp = d.followUpDate ? d.followUpDate.split('-').reverse().join('/') : "";
+
                     const urgentUI = d.computedUrgent ? `
                         <div style="display:flex; align-items:center; gap:5px;">
-                            <span style="cursor:help;" title="${d.followUpDate ? 'תזכורת מעקב להיום: ' + d.followUpDate : 'הערה דחופה בתיק'}">⚠️</span>
+                            <span style="cursor:help;" title="${d.followUpDate ? 'תזכורת מעקב ליום: ' + displayFollowUp : 'הערה דחופה בתיק'}">⚠️</span>
                             <button onclick="window.resolveUrgent('${d.id}', '${d.clientName}')" 
                                     title="סמן כטופל והסר דחיפות"
                                     style="background:#27ae60; color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✓</button>
