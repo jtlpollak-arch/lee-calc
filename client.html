@@ -19,24 +19,22 @@
         
         header { background: #000; padding: 15px 40px; border-bottom: 4px solid var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         
-        /* הוסיפי את זה בתוך ה-style בתחילת הקובץ */
         .type-badge {
-    background: rgba(228, 186, 236, 0.137); /* ירוק שקוף עדין לרקע */
-    color: #050505;                      /* צבע הטקסט הירוק (משתנה --safe שלך) */
-    border: 1px solid rgba(39, 174, 96, 0.5); /* גבול ירוק חצי שקוף */
-    padding: 4px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 800;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.1); /* צל ירקרק עדין */
-    backdrop-filter: blur(4px);
-}
+            background: rgba(228, 186, 236, 0.137);
+            color: #050505;
+            border: 1px solid rgba(39, 174, 96, 0.5);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.1);
+            backdrop-filter: blur(4px);
+        }
 
-        /* כפתור שיתוף חוויה חדש */
         .btn-share-experience {
             background: var(--primary);
             color: black;
@@ -58,7 +56,6 @@
             background: #f1c40f;
         }
 
-        /* עיצוב ציר זמן - Roadmap */
         .roadmap-container { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #eee; }
         .roadmap-steps { display: flex; justify-content: space-between; position: relative; padding: 10px 0; }
         .roadmap-steps::before { content: ""; position: absolute; top: 30px; left: 5%; right: 5%; height: 2px; background: #eee; z-index: 1; }
@@ -277,7 +274,6 @@
         .modal-content { background: white; padding: 35px; width: 90%; max-width: 600px; border-radius: 20px; position: relative; max-height: 85vh; overflow-y: auto; }
         .close-x { position: absolute; left: 20px; top: 20px; cursor: pointer; color: #999; }
         
-        /* עיצוב אודות משודרג */
         .about-header { background: var(--secondary); margin: -35px -35px 30px -35px; padding: 40px; border-radius: 20px 20px 0 0; color: white; text-align: center; }
         .about-profile { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; margin-bottom: 15px; }
         .about-vision { background: #fdfaf0; border-right: 5px solid var(--primary); padding: 20px; border-radius: 0 10px 10px 0; margin: 20px 0; font-style: italic; }
@@ -285,15 +281,11 @@
         .about-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
         .about-list i { color: var(--primary); }
 
-        .checklist-body {max-height: 70vh; overflow-y: auto; padding-left: 10px; /* למנוע מהסקרול להסתיר טקסט */ }
+        .checklist-body {max-height: 70vh; overflow-y: auto; padding-left: 10px; }
 
         @media (max-width: 900px) { .prop-grid { grid-template-columns: 1fr; } .finance-grid { grid-template-columns: 1fr; } }
 
-        #checklist-modal { 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-        }
+        #checklist-modal { display: none; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -393,6 +385,7 @@
                 <div id="balance-warning" style="display:none; font-size: 13px; color: var(--danger); margin-top: 10px; font-weight: bold;">
                     <i data-lucide="alert-octagon" size="16"></i> שימו לב: חריגה מהתקציב המתוכנן
                 </div>
+                <div class="input-wrapper" style="margin-top:20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px;"><label style="color:var(--primary)">🎯 יעד יתרה רצוי בסיום:</label><input type="text" id="in-targetBalance" class="finance-input u-input" style="background: white; color: black;" placeholder="הזינו יעד (למשל: 200,000)"></div>
             </div>
             <div class="chart-box"><canvas id="mainChart"></canvas></div>
         </div>
@@ -439,11 +432,9 @@
 
 <div id="about-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center;">
     <div class="modal-content" style="padding: 0; overflow: hidden; width: 92%; max-width: 420px; border-radius: 20px; background: white; position: relative; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-        
         <span class="close-x" onclick="closeAbout()" style="position: absolute; top: 15px; right: 15px; z-index: 100; color: white; cursor: pointer; background: rgba(0,0,0,0.4); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="x" style="width: 18px; height: 18px;"></i>
         </span>
-
         <div class="about-header" style="background: #000; padding: 50px 20px 25px 20px; text-align: center; color: white;">
             <div style="width: 110px; height: 110px; margin: 0 auto 15px auto; border: 3px solid #FFD700; border-radius: 50%; overflow: hidden; background: #222; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);">
                 <img src="li-profile.jpg" alt="לי אטדגי" style="width: 100%; height: 100%; object-fit: cover;">
@@ -451,9 +442,7 @@
             <h2 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;">לי אטדגי</h2>
             <div style="color: #FFD700; font-weight: 600; font-size: 15px; margin-top: 6px; letter-spacing: 0.3px;">אסטרטגיה וליווי עסקאות נדל"ן</div>
         </div>
-
         <div style="padding: 20px 25px 25px 25px; box-sizing: border-box;">
-            
             <div style="text-align: center; margin-bottom: 18px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px;">
                 <h2 style="font-size: 19px; font-weight: 800; color: #000; margin: 0; line-height: 1.3;">
                     כשמוכרים <span style="color: #D4AF37;">מהגובה הנכון</span>,
@@ -461,11 +450,9 @@
                     רואים רחוק יותר. <span style="background: #000; color: #FFD700; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 5px;">משיגים יותר.</span>
                 </h2>
             </div>
-
             <div style="margin-bottom: 18px; text-align: center; font-size: 14px; line-height: 1.5; color: #444; background: #fdfdfd; padding: 10px; border-radius: 8px; border-right: 4px solid #D4AF37; font-style: italic;">
                 "נדל"ן עבורי הוא לא רק קירות ומספרים, הוא הבית שלכם והביטחון הכלכלי שלכם."
             </div>
-
             <h3 style="font-size: 15px; margin: 0 0 10px 0; color: #222; font-weight: 700;">למה לעבוד איתי?</h3>
             <ul style="list-style: none; padding: 0; margin: 0 0 22px 0;">
                 <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; color: #333;">
@@ -478,7 +465,6 @@
                     <i data-lucide="check-circle-2" style="width: 16px; color: #D4AF37;"></i> מעטפת של נבחרת מומחים מובילה
                 </li>
             </ul>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <a href="tel:0533386345" style="background: #FFD700; color: #000; padding: 12px; border-radius: 12px; text-decoration: none; font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);">
                     <i data-lucide="phone" style="width: 18px;"></i> התקשרו
@@ -495,7 +481,6 @@
     <div class="modal-content">
         <span class="close-x" onclick="closeChecklist()"><i data-lucide="x"></i></span>
         <h2 id="checklist-title" style="color:var(--secondary); font-size:18px; margin-bottom:20px;"></h2>
-        
         <div class="checklist-body">
             <div class="input-wrapper">
                 <label>רמת רעש (1-שקט מאוד, 5-רועש)</label>
@@ -512,7 +497,6 @@
                 <label><input type="checkbox" id="check-light"> דירה מוארת ?</label>
             </div>
             <textarea id="check-notes" placeholder="הערות אישיות מהסיור..." style="width:100%; height:80px; margin-top:15px; border-radius:8px; padding:10px;"></textarea>
-            
             <button onclick="window.saveChecklist()" class="btn-share-experience" style="width:100%; justify-content:center; margin-top:20px;">
                 שמירת סיכום סיור
             </button>
@@ -540,25 +524,19 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tab).classList.add('active');
-        
         document.querySelectorAll('.tab-btn').forEach(btn => {
             if(btn.onclick.toString().includes(tab)) btn.classList.add('active');
         });
         lucide.createIcons();
     };
 
-    // פונקציית שיתוף חוויה חדשה
     window.shareExperience = () => {
-		if (!currentProjectData) return;
-		
-		// הלינק החדש שמוביל לקטלוג הנכסים החיים
-		const catalogUrl = `${window.location.origin}/catalog.html`;
-		
-		const message = `היי, אני חייבת לשתף אותך - אני עובדת עכשיו עם לי אטדגי על העסקה שלי והיא משתמשת במערכת טכנולוגית מדהימה שנותנת לי שקט נפשי ונתונים בזמן אמת. כדאי לך לראות את רמת ניתוח הנכסים שלה כאן: ${catalogUrl}`;
-		
-		const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-		window.open(waUrl, '_blank');
-	};
+        if (!currentProjectData) return;
+        const catalogUrl = `${window.location.origin}/catalog.html`;
+        const message = `היי, אני חייבת לשתף אותך - אני עובדת עכשיו עם לי אטדגי על העסקה שלי והיא משתמשת במערכת טכנולוגית מדהימה שנותנת לי שקט נפשי ונתונים בזמן אמת. כדאי לך לראות את רמת ניתוח הנכסים שלה כאן: ${catalogUrl}`;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    };
 
     function initChart() {
         const canvas = document.getElementById('mainChart');
@@ -582,17 +560,14 @@
             const list = document.getElementById('providers-list');
             if (!list) return;
             const providers = snap.docs.map(d => d.data());
-            
             if (providers.length === 0) {
                 list.innerHTML = `<p style="color: #7f8c8d; grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 20px;">נבחרת המומחים מתעדכנת ברגעים אלו...</p>`;
                 return;
             }
-
             list.innerHTML = providers.map(p => {
                 const cleanPhone = p.phone.replace(/[^0-9]/g, '');
                 const waNumber = cleanPhone.startsWith('0') ? '972' + cleanPhone.substring(1) : cleanPhone;
                 const message = encodeURIComponent(`היי ${p.name}, הגעתי אליך דרך הפורטל של לי אטדגי, אשמח להתייעץ איתך.`);
-                
                 return `
                 <div class="provider-card">
                     <div class="provider-category">${p.category}</div>
@@ -621,21 +596,18 @@
         if (!c) return 0;
         let weightedScore = 0;
         let totalWeight = 0;
-        
         const metrics = [
             { propKey: 'scoreEdu', prefKey: 'prefEdu' },
             { propKey: 'scoreTrans', prefKey: 'prefTrans' },
             { propKey: 'scoreLeisure', prefKey: 'prefLeisure' },
             { propKey: 'scoreSea', prefKey: 'prefSea' }
         ];
-
         metrics.forEach(m => {
             const importance = c[m.prefKey] || 3;
             const score = p[m.propKey] || 0;
             weightedScore += (score * importance);
             totalWeight += (importance * 5);
         });
-
         let percent = Math.round((weightedScore / totalWeight) * 100);
         if (c.limitHighFloor && p.floor > 4) percent = Math.max(0, percent - 50);
         return percent;
@@ -650,12 +622,10 @@
         
         let props = (currentProjectData.properties || []).map(p => {
             const bankMatch = bankProperties.find(bp => 
-                (p.propertyId && bp.id === p.propertyId) || 
-                (p.id && bp.id === p.id) || 
-                (bp.address === p.address)
+                (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
             );
             const combined = bankMatch ? 
-                { ...p, ...bankMatch, address: bankMatch.address } : 
+                { ...p, ...bankMatch, id: bankMatch.id, address: bankMatch.address } : 
                 { ...p, status: 'ACTIVE' };
             return { ...combined, matchPercent: calculatePropMatch(combined, currentProjectData) };
         });
@@ -682,16 +652,16 @@
         renderPropsGrid(filtered, bankProperties);
     };
 
-    window.selectPropForCalc = async (price, address) => {
+    window.selectPropForCalc = async (price, id) => {
         if(!clientID) return;
         await updateDoc(doc(db, "projects", clientID), { purchasePrice: price });
-        alert(`נבחר: ${address}`);
+        alert(`נכס נבחר לחישוב פיננסי`);
     };
 
-    window.updateRating = async (address, rating) => {
-        if(!clientID) return;
+    window.updateRating = async (id, rating) => {
+        if(!clientID || !id) return;
         const newRatings = { ...(currentProjectData.ratings || {}) };
-        newRatings[address] = rating;
+        newRatings[id] = rating; // שימוש ב-ID כמפתח ייחודי
         await updateDoc(doc(db, "projects", clientID), { ratings: newRatings });
     };
 
@@ -705,149 +675,127 @@
     }
 
     function renderPropsGrid(props, allPropsForArchive) {
-
-        // הוסיפי את זה בתוך renderPropsGrid
         const typeIcons = {
-            'דירה': 'building-2',
-            'דירת גן': 'leaf',
-            'גג/פנטהאוז': 'arrow-up-circle',
-            'דופלקס': 'layers',
-            'תיירות ונופש': 'palmtree',
-            'מרתף/פרטר': 'arrow-down-to-line',
-            'טריפלקס': 'component',
-            'יחידת דיור': 'home',
-            'סטודיו/לופט': 'layout',
-            'בית פרטי/קוטג\'': 'tent',
-            'דו משפחתי': 'split'
+            'דירה': 'building-2', 'דירת גן': 'leaf', 'גג/פנטהאוז': 'arrow-up-circle',
+            'דופלקס': 'layers', 'תיירות ונופש': 'palmtree', 'מרתף/פרטר': 'arrow-down-to-line',
+            'טריפלקס': 'component', 'יחידת דיור': 'home', 'סטודיו/לופט': 'layout',
+            'בית פרטי/קוטג\'': 'tent', 'דו משפחתי': 'split'
         };
 
-
-    const list = document.getElementById('p-list');
-    const archiveList = document.getElementById('archive-list');
-    const archiveSection = document.getElementById('archive-section');
-    if(!list) return;
-    
-    const favs = currentProjectData.favorites || [];
-    const ratings = currentProjectData.ratings || {};
-    const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
-    const adminSettings = {
-        lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
-        lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
-        brokerageRateSale: currentProjectData.brokerageRateSale || 2,
-        brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
-    };
-
-    // 1. נכסים אקטיביים להצגה בגריד הראשי (מושפעים מהפילטר)
-    const activeProps = props.filter(p => p.status === 'ACTIVE');
-    
-    // 2. תיקון: לקיחת נכסים מהבנק הכללי וחישוב אחוז התאמה עבורם
-    const archivedProps = (allPropsForArchive || bankProperties)
-        .filter(p => p.status === 'SOLD' || p.status === 'BOUGHT')
-        .map(p => ({
-            ...p,
-            matchPercent: calculatePropMatch(p, currentProjectData)
-        }));
-
-    const mapFunction = (p, idx) => {
-        const isInactive = p.status !== 'ACTIVE';
-        const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
-        const currentRating = ratings[p.address] || 0;
-        const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
-        const isOk = sim.finalBalance >= 0;
-        const matchScore = p.matchPercent || 0;
-        const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
-
-        let stars = '';
-        for(let i=1; i<=5; i++) stars += `<i data-lucide="star" size="18" class="star ${i <= currentRating ? 'filled' : ''}" onclick="window.updateRating('${p.address}', ${i})"></i>`;
+        const list = document.getElementById('p-list');
+        const archiveList = document.getElementById('archive-list');
+        const archiveSection = document.getElementById('archive-section');
+        if(!list) return;
         
-        let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
-        let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
-        const links = p.links || (p.link ? [p.link] : []);
-        let linkUI = '';
-        
-        if (links.length === 1) {
-            linkUI = `<a href="${links[0]}" target="_blank" class="icon-btn"><i data-lucide="external-link" size="18"></i></a>`;
-        } else if (links.length > 1) {
-            const dropdownItems = links.map((l, i) => `
-                <a href="${l}" target="_blank" class="link-option">
-                    <i data-lucide="link" size="14"></i>
-                    <span>${getSiteName(l)}</span>
-                </a>
-            `).join('');
-            linkUI = `<div style="position:relative;"><button class="icon-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('active')"><i data-lucide="external-link" size="18"></i></button><div class="links-dropdown">${dropdownItems}</div></div>`;
-        }
+        const favs = currentProjectData.favorites || [];
+        const ratings = currentProjectData.ratings || {};
+        const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
+        const adminSettings = {
+            lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
+            lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
+            brokerageRateSale: currentProjectData.brokerageRateSale || 2,
+            brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
+        };
 
-        const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
-        const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
+        const activeProps = props.filter(p => p.status === 'ACTIVE');
+        const archivedProps = (allPropsForArchive || bankProperties)
+            .filter(p => p.status === 'SOLD' || p.status === 'BOUGHT')
+            .map(p => ({ ...p, matchPercent: calculatePropMatch(p, currentProjectData) }));
 
-        return `
-        <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
-            ${featuredRibbon}${statusOverlay}
-            <div class="budget-badge ${isOk ? 'ok' : 'over'}">
-                <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
-            </div>
-            ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
-            <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
-                ${p.propertyType ? `
-                    <div class="type-badge">
-                        <i data-lucide="${typeIcons[p.propertyType] || 'home'}" size="12"></i> 
-                        ${p.propertyType}
+        const mapFunction = (p, idx) => {
+            const isInactive = p.status !== 'ACTIVE';
+            const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
+            const currentRating = ratings[p.id] || ratings[p.address] || 0; // תמיכה לאחור בכתובת וגישה ל-ID
+            const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
+            const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance) || 0;
+            const isOk = sim.finalBalance >= targetBal;
+            const matchScore = p.matchPercent || 0;
+            const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
+
+            let stars = '';
+            for(let i=1; i<=5; i++) {
+                stars += `<i data-lucide="star" size="18" class="star ${i <= currentRating ? 'filled' : ''}" onclick="window.updateRating('${p.id}', ${i})"></i>`;
+            }
+            
+            let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
+            let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
+            const links = p.links || (p.link ? [p.link] : []);
+            let linkUI = '';
+            
+            if (links.length === 1) {
+                linkUI = `<a href="${links[0]}" target="_blank" class="icon-btn"><i data-lucide="external-link" size="18"></i></a>`;
+            } else if (links.length > 1) {
+                const dropdownItems = links.map((l, i) => `
+                    <a href="${l}" target="_blank" class="link-option">
+                        <i data-lucide="link" size="14"></i>
+                        <span>${getSiteName(l)}</span>
+                    </a>`).join('');
+                linkUI = `
+                    <div style="position:relative;">
+                        <button class="icon-btn link-trigger-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('active')">
+                            <i data-lucide="external-link" size="18"></i>
+                        </button>
+                        <div class="links-dropdown">${dropdownItems}</div>
+                    </div>`;
+            }
+
+            const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
+            const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
+
+            return `
+            <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
+                ${featuredRibbon}${statusOverlay}
+                <div class="budget-badge ${isOk ? 'ok' : 'over'}">
+                    <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
+                </div>
+                ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
+                <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
+                    ${p.propertyType ? `<div class="type-badge"><i data-lucide="${typeIcons[p.propertyType] || 'home'}" size="12"></i> ${p.propertyType}</div>` : ''}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                         <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
+                         <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
                     </div>
-                ` : ''}
+                    <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
+                    <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
+                    <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
+                    <div class="prop-specs">
+                        <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
+                        <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
+                        <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
+                    </div>
+                    ${simpleMap}
+                    <div class="lifestyle-mini-badges">
+                        <div class="l-badge" title="חינוך"><i data-lucide="graduation-cap" size="12"></i> ${p.scoreEdu || '?'}/5</div>
+                        <div class="l-badge" title="תחבורה"><i data-lucide="bus" size="12"></i> ${p.scoreTrans || '?'}/5</div>
+                        <div class="l-badge" title="פנאי"><i data-lucide="coffee" size="12"></i> ${p.scoreLeisure || '?'}/5</div>
+                        <div class="l-badge" title="ים"><i data-lucide="waves" size="12"></i> ${p.scoreSea || '?'}/5</div>
+                    </div>
+                    ${p.leeTip ? `<div class="lee-tip-box"><span>${p.leeTip}</span></div>` : ''}
+                    <div class="rating-stars">${stars}</div>
+                </div>
+                <div class="action-group ${isInactive ? 'disabled-actions' : ''}">
+                    <div style="display:flex; gap:8px; justify-content: center; margin-bottom: 5px;">
+                        <button class="icon-btn" onclick="window.openAi('${b64EncodeUnicode(p.aiAnalysis || "")}')"><i data-lucide="sparkles" size="18"></i></button>
+                        ${linkUI}
+                        <button class="icon-btn ${favs.includes(p.id) ? 'active-fav' : ''}" onclick="window.tFav('${p.id}', ${favs.includes(p.id)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.id) ? '#e74c3c' : 'none'}"></i></button>
+                    </div>
+                    <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.id}')">בחר</button>
+                    <button class="btn-quick-action" style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff;" onclick="window.openChecklist('${p.id}', '${p.address.replace(/'/g, "\\'")}')"><i data-lucide="clipboard-check" size="14"></i> צ'ק-ליסט סיור</button>
+                    <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
+                </div>
+            </div>`;
+        };
 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                     <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
-                     <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
-                </div>
-                <div class="match-progress-container"><div class="match-progress-bar" style="width:${matchScore}%; background-color:${matchColor};"></div></div>
-
-                <div class="prop-address">${p.featured ? '🌟 ' : ''}${p.address}, ${p.city || ''}</div>
-                <div class="prop-price" style="margin-top:10px;">₪${FinanceLogic.formatNumber(p.price)}</div>
-                
-                <div class="prop-specs">
-                    <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
-                    <div class="spec-item"><i data-lucide="layout" size="14"></i> ${p.rooms} חד'</div>
-                    <div class="spec-item"><i data-lucide="layers" size="14"></i> קומה ${p.floor || '?'}</div>
-                </div>
-                ${simpleMap}
-                <div class="lifestyle-mini-badges">
-                    <div class="l-badge" title="חינוך"><i data-lucide="graduation-cap" size="12"></i> ${p.scoreEdu || '?'}/5</div>
-                    <div class="l-badge" title="תחבורה"><i data-lucide="bus" size="12"></i> ${p.scoreTrans || '?'}/5</div>
-                    <div class="l-badge" title="פנאי"><i data-lucide="coffee" size="12"></i> ${p.scoreLeisure || '?'}/5</div>
-                    <div class="l-badge" title="ים"><i data-lucide="waves" size="12"></i> ${p.scoreSea || '?'}/5</div>
-                </div>
-                ${p.leeTip ? `<div class="lee-tip-box"><span>${p.leeTip}</span></div>` : ''}
-                <div class="rating-stars">${stars}</div>
-            </div>
-            <div class="action-group ${isInactive ? 'disabled-actions' : ''}">
-                <div style="display:flex; gap:8px; justify-content: center; margin-bottom: 5px;">
-                    <button class="icon-btn" onclick="window.openAi('${b64EncodeUnicode(p.aiAnalysis || "")}')"><i data-lucide="sparkles" size="18"></i></button>
-                    ${linkUI}
-                    <button class="icon-btn ${favs.includes(p.address) ? 'active-fav' : ''}" onclick="window.tFav('${p.address}', ${favs.includes(p.address)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.address) ? '#e74c3c' : 'none'}"></i></button>
-                </div>
-                <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">בחר</button>
-                <button class="btn-quick-action" style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff;" onclick="window.openChecklist('${p.address}')"><i data-lucide="clipboard-check" size="14"></i> צ'ק-ליסט סיור</button>
-                <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
-            </div>
-        </div>`;
-    };
-
-    // הצגת נכסים אקטיביים
-    list.innerHTML = activeProps.map((p, i) => mapFunction(p, i)).join('');
-    
-    // הצגת הארכיון בצורה דינמית
-    if (archiveList && archiveSection) {
-        if (archivedProps.length > 0) {
-            const archiveContent = archivedProps.map((p, i) => mapFunction(p, i + 1000)).join('');
-            archiveList.innerHTML = `<div class="archive-track">${archiveContent}${archiveContent}${archiveContent}</div>`;
-            archiveSection.style.display = 'block';
-        } else {
-            archiveSection.style.display = 'none';
+        list.innerHTML = activeProps.map((p, i) => mapFunction(p, i)).join('');
+        if (archiveList && archiveSection) {
+            if (archivedProps.length > 0) {
+                const archiveContent = archivedProps.map((p, i) => mapFunction(p, i + 1000)).join('');
+                archiveList.innerHTML = `<div class="archive-track">${archiveContent}${archiveContent}${archiveContent}</div>`;
+                archiveSection.style.display = 'block';
+            } else { archiveSection.style.display = 'none'; }
         }
+        lucide.createIcons();
     }
-    
-    lucide.createIcons();
-}
 
     function b64EncodeUnicode(str) {
         return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
@@ -859,15 +807,11 @@
         initChart();
         startBankSync();
         startProvidersSync();
-
         onSnapshot(doc(db, "projects", clientID), (snap) => {
             if (!snap.exists()) return;
             currentProjectData = snap.data();
-            
-            // עדכון ה-Roadmap
             const currentRoadmapStep = parseInt(currentProjectData.roadmapStep) || 1;
             updateRoadmap(currentRoadmapStep);
-
             const settings = {
                 lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
                 lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
@@ -875,54 +819,46 @@
                 brokerageRatePurch: currentProjectData.brokerageRatePurch || 2
             };
 
-            // עדכון הכותרות (Labels) עם האחוזים המפורשים
-            const lblBrS = document.getElementById('label-brS');
-            if (lblBrS) lblBrS.innerText = `דמי תיווך מכירה (${settings.brokerageRateSale}% + מע"מ)`;
-
-            const lblLwS = document.getElementById('label-lwS');
-            if (lblLwS) lblLwS.innerText = `שכר טרחת עו"ד (${settings.lawyerRateSale}% + מע"מ)`;
-
-            const lblBrP = document.getElementById('label-brP');
-            if (lblBrP) lblBrP.innerText = `דמי תיווך קנייה (${settings.brokerageRatePurch}% + מע"מ)`;
-
-            const lblLwP = document.getElementById('label-lwP');
-            if (lblLwP) lblLwP.innerText = `שכר טרחת עו"ד (${settings.lawyerRatePurch}% + מע"מ)`;
+            document.getElementById('label-brS').innerText = `דמי תיווך מכירה (${settings.brokerageRateSale}% + מע"מ)`;
+            document.getElementById('label-lwS').innerText = `שכר טרחת עו"ד (${settings.lawyerRateSale}% + מע"מ)`;
+            document.getElementById('label-brP').innerText = `דמי תיווך קנייה (${settings.brokerageRatePurch}% + מע"מ)`;
+            document.getElementById('label-lwP').innerText = `שכר טרחת עו"ד (${settings.lawyerRatePurch}% + מע"מ)`;
 
             const res = FinanceLogic.calculateAll({...currentProjectData, ...settings});
             document.getElementById('c-name').innerText = currentProjectData.clientName;
             document.getElementById('c-status').innerText = FinanceLogic.STATUSES[currentProjectData.status] || currentProjectData.status;
             document.getElementById('final-bal').innerText = res.finalBalance.toLocaleString();
-            
             const card = document.getElementById('main-summary-card');
             const warn = document.getElementById('balance-warning');
-            if (res.finalBalance < 0) { card.classList.add('negative-balance'); warn.style.display = 'block'; }
-            else { card.classList.remove('negative-balance'); warn.style.display = 'none'; }
+const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance) || 0;
 
+if (res.finalBalance < targetBal) { 
+    card.classList.add('negative-balance'); 
+    warn.style.display = 'block'; 
+    warn.innerHTML = `<i data-lucide="alert-octagon" size="16"></i> שימו לב: יתרה נמוכה מהיעד שהצבתם (${targetBal.toLocaleString()} ₪)`;
+} else { 
+    card.classList.remove('negative-balance'); 
+    warn.style.display = 'none'; 
+}
+lucide.createIcons();
             document.getElementById('out-brS').value = FinanceLogic.formatNumber(res.brokerageFeeSale);
             document.getElementById('out-lwS').value = FinanceLogic.formatNumber(res.lawyerFeeSale);
             document.getElementById('out-brP').value = FinanceLogic.formatNumber(res.brokerageFeePurch);
             document.getElementById('out-lwP').value = FinanceLogic.formatNumber(res.lawyerFeePurch);
             document.getElementById('total-sale-costs').innerText = "₪" + res.totalSaleCosts.toLocaleString();
             document.getElementById('total-purch-costs').innerText = "₪" + res.totalPurchCosts.toLocaleString();
-            
             if(chart) {
                 chart.data.datasets[0].data = [Math.max(0, res.finalBalance), res.totalProjectCost || 1];
                 chart.update();
             }
-
-            ['salePrice','mortgageBalance','bettermentTax','purchasePrice','purchaseTax','renovationBudget'].forEach(f => {
+            ['salePrice','mortgageBalance','bettermentTax','purchasePrice','purchaseTax','renovationBudget', 'targetBalance'].forEach(f => {
                 const el = document.getElementById('in-' + f);
                 if (el && document.activeElement !== el) el.value = FinanceLogic.formatNumber(currentProjectData[f]);
             });
-            // צרי רשימה מעודכנת של נכסים עם השמות הנכונים מהבנק
             const updatedPropsForFilter = (currentProjectData.properties || []).map(p => {
-                const bankMatch = bankProperties.find(bp => 
-                    (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
-                );
+                const bankMatch = bankProperties.find(bp => (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address));
                 return bankMatch ? { ...p, city: bankMatch.city } : p;
             });
-
-            // עכשיו עדכני את הפילטרים עם הרשימה שכוללת את "דימונה"
             updateCityFilters(updatedPropsForFilter);
             filterAndRender();
         });
@@ -931,42 +867,24 @@
     function updateCityFilters(props) {
         const container = document.getElementById('filters-container');
         if(!container) return;
-        
-        // חילוץ ערים ייחודיות מתוך הנכסים המעודכנים
         const cities = [...new Set(props.map(p => p.city || 'כללי'))];
-        
-        // יצירת כפתור "הכל"
-        let html = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" 
-                    onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>`;
-        
-        // יצירת כפתור לכל עיר - כאן ההשוואה הקריטית
-        html += cities.map(c => `
-            <button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" 
-                    onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">
-                ${c}
-            </button>
-        `).join('');
-        
+        let html = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>`;
+        html += cities.map(c => `<button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">${c}</button>`).join('');
         container.innerHTML = html;
     }
     window.setFilter = (city) => { 
         currentCityFilter = city; 
-        
-        // כאן התיקון: אנחנו בונים רשימה מעודכנת ושולחים אותה שוב לפונקציה של הכפתורים
         const updatedProps = (currentProjectData.properties || []).map(p => {
-            const bankMatch = bankProperties.find(bp => 
-                (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
-            );
+            const bankMatch = bankProperties.find(bp => (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address));
             return bankMatch ? { ...p, city: bankMatch.city } : p;
         });
-
-        updateCityFilters(updatedProps); // זה מה שצובע את הכפתור בזהב/שחור
-        filterAndRender(); // זה מה שמסנן את הכרטיסיות למטה
+        updateCityFilters(updatedProps);
+        filterAndRender();
     };
-    window.tFav = async (addr, isFav) => {
-        if(!clientID) return;
+    window.tFav = async (id, isFav) => {
+        if(!clientID || !id) return;
         const ref = doc(db, "projects", clientID);
-        await updateDoc(ref, { favorites: isFav ? arrayRemove(addr) : arrayUnion(addr) });
+        await updateDoc(ref, { favorites: isFav ? arrayRemove(id) : arrayUnion(id) });
     };
     window.openAbout = () => document.getElementById('about-modal').style.display = 'flex';
     window.closeAbout = () => document.getElementById('about-modal').style.display = 'none';
@@ -993,55 +911,63 @@
             await updateDoc(doc(db, "projects", clientID), { [e.target.id.replace('in-', '')]: FinanceLogic.cleanNumber(e.target.value) });
         };
     });
-    lucide.createIcons();
 
-
-let currentChecklistProp = null;
-
-window.openChecklist = (addr) => {
-    currentChecklistProp = addr;
-    document.getElementById('checklist-title').innerText = `צ'ק-ליסט סיור: ${addr}`;
-    
-    // טעינת נתונים קיימים אם הלקוח כבר מילא בעבר
-    const existing = currentProjectData.tourNotes?.[addr] || {};
-    document.getElementById('check-noise').value = existing.noise || 3;
-    document.getElementById('check-condition').value = existing.condition || 3;
-    document.getElementById('check-moisture').checked = existing.moisture || false;
-    document.getElementById('check-renovated').checked = existing.renovated || false;
-    document.getElementById('check-light').checked = existing.light || false;
-    document.getElementById('check-notes').value = existing.notes || "";
-
-    document.getElementById('checklist-modal').style.display = 'flex';
-    lucide.createIcons();
-};
-
-window.closeChecklist = () => {
-    document.getElementById('checklist-modal').style.display = 'none';
-};
-
-window.saveChecklist = async () => {
-    if (!clientID || !currentChecklistProp) return;
-    
-    const checklistData = {
-        noise: document.getElementById('check-noise').value,
-        condition: document.getElementById('check-condition').value,
-        moisture: document.getElementById('check-moisture').checked,
-        renovated: document.getElementById('check-renovated').checked,
-        light: document.getElementById('check-light').checked,
-        notes: document.getElementById('check-notes').value,
-        timestamp: new Date().toISOString()
+    let currentChecklistPropID = null;
+    window.openChecklist = (id, addr) => {
+        currentChecklistPropID = id;
+        document.getElementById('checklist-title').innerText = `צ'ק-ליסט סיור: ${addr}`;
+        const existing = currentProjectData.tourNotes?.[id] || {};
+        document.getElementById('check-noise').value = existing.noise || 3;
+        document.getElementById('check-condition').value = existing.condition || 3;
+        document.getElementById('check-moisture').checked = existing.moisture || false;
+        document.getElementById('check-renovated').checked = existing.renovated || false;
+        document.getElementById('check-light').checked = existing.light || false;
+        document.getElementById('check-notes').value = existing.notes || "";
+        document.getElementById('checklist-modal').style.display = 'flex';
+        lucide.createIcons();
     };
 
-    const newTourNotes = { ...(currentProjectData.tourNotes || {}) };
-    newTourNotes[currentChecklistProp] = checklistData;
+    window.closeChecklist = () => { document.getElementById('checklist-modal').style.display = 'none'; };
 
-    await updateDoc(doc(db, "projects", clientID), { tourNotes: newTourNotes });
-    
-    alert("סיכום הסיור נשמר בהצלחה!");
-    window.closeChecklist();
-};
+    window.saveChecklist = async () => {
+        if (!clientID || !currentChecklistPropID) return;
+        const checklistData = {
+            noise: document.getElementById('check-noise').value,
+            condition: document.getElementById('check-condition').value,
+            moisture: document.getElementById('check-moisture').checked,
+            renovated: document.getElementById('check-renovated').checked,
+            light: document.getElementById('check-light').checked,
+            notes: document.getElementById('check-notes').value,
+            timestamp: new Date().toISOString()
+        };
+        const newTourNotes = { ...(currentProjectData.tourNotes || {}) };
+        newTourNotes[currentChecklistPropID] = checklistData; // שימוש ב-ID להגנה על המידע
+        await updateDoc(doc(db, "projects", clientID), { tourNotes: newTourNotes });
+        alert("סיכום הסיור נשמר בהצלחה!");
+        window.closeChecklist();
+    };
 
+    document.addEventListener('click', (event) => {
+        const activeDropdowns = document.querySelectorAll('.links-dropdown.active');
+        activeDropdowns.forEach(dropdown => {
+            const isClickInside = dropdown.contains(event.target);
+            const isTriggerBtn = event.target.closest('.link-trigger-btn');
+            if (!isClickInside && !isTriggerBtn) { dropdown.classList.remove('active'); }
+        });
 
+        const modals = [
+            { id: 'about-modal', closeFunc: window.closeAbout },
+            { id: 'checklist-modal', closeFunc: window.closeChecklist },
+            { id: 'ai-modal', closeFunc: window.closeAi }
+        ];
+
+        modals.forEach(modal => {
+            const modalEl = document.getElementById(modal.id);
+            if (modalEl && (window.getComputedStyle(modalEl).display === 'flex' || window.getComputedStyle(modalEl).display === 'block')) {
+                if (event.target === modalEl) { modal.closeFunc(); }
+            }
+        });
+    }, true);
 </script>
 </body>
 </html>

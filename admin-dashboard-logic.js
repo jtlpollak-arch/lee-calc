@@ -95,16 +95,14 @@ function initAllSnapshots() {
         let urgentCount = 0;
         allCurrentClients = [];
 
-        // --- תיקון שעון ישראל: קבלת התאריך המקומי (YYYY-MM-DD) ללא תלות בשעון UTC ---
         const now = new Date();
-        const offset = now.getTimezoneOffset() * 60000; // הפרש דקות במילישניות
+        const offset = now.getTimezoneOffset() * 60000; 
         const todayStr = (new Date(now - offset)).toISOString().split('T')[0];
         
         snap.forEach(s => {
             const d = s.data();
             let isActuallyUrgent = d.isNotesUrgent || false;
             
-            // בדיקת דחיפות לפי תאריך מעקב (השוואה טקסטואלית של YYYY-MM-DD היא הכי בטוחה)
             if (d.followUpDate) {
                 if (d.followUpDate <= todayStr) {
                     isActuallyUrgent = true;
@@ -130,7 +128,6 @@ function initAllSnapshots() {
                 const matchesSearch = !clientSearchTerm || d.clientName.toLowerCase().includes(clientSearchTerm);
 
                 if (matchesUrgent && matchesSearch) {
-                    // עיצוב תאריך התזכורת לתצוגה יפה (DD/MM/YYYY)
                     const displayFollowUp = d.followUpDate ? d.followUpDate.split('-').reverse().join('/') : "";
 
                     const urgentUI = d.computedUrgent ? `
@@ -144,6 +141,7 @@ function initAllSnapshots() {
 
                     const roadmapText = ROADMAP_STEPS[d.roadmapStep] || "טרם נקבע";
 
+                    // 1. רשימת משויכים - תיקון הצלבה
                     const propsList = (d.properties || []).map(p => {
                         const liveProp = allBankProps.find(bp => 
                             (p.propertyId && bp.id === p.propertyId) || 
@@ -158,12 +156,9 @@ function initAllSnapshots() {
                         `;
                     }).join('');
 
+                    // 2. רשימת מועדפים ❤️ - תיקון הצלבת GUID לכתובת
                     const favsList = (d.favorites || []).map(f => {
-                        const associatedProp = (d.properties || []).find(p => p.address === f);
-                        const pId = associatedProp ? (associatedProp.propertyId || associatedProp.id) : null;
-                        const liveProp = allBankProps.find(bp => 
-                            (pId && bp.id === pId) || (bp.data.address === f)
-                        );
+                        const liveProp = allBankProps.find(bp => bp.id === f || bp.data.address === f);
                         const currentAddr = liveProp ? liveProp.data.address : f;
                         return `
                             <span class="fav-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${currentAddr}')">
@@ -172,14 +167,11 @@ function initAllSnapshots() {
                         `;
                     }).join('');
                     
+                    // 3. דירוגי נכסים ⭐ - תיקון הצלבת GUID לכתובת
                     const ratingsObj = d.ratings || {};
-                    const ratingsList = Object.entries(ratingsObj).map(([addr, stars]) => {
-                        const associatedProp = (d.properties || []).find(p => p.address === addr);
-                        const pId = associatedProp ? (associatedProp.propertyId || associatedProp.id) : null;
-                        const liveProp = allBankProps.find(bp => 
-                            (pId && bp.id === pId) || (bp.data.address === addr)
-                        );
-                        const currentAddr = liveProp ? liveProp.data.address : addr;
+                    const ratingsList = Object.entries(ratingsObj).map(([propID, stars]) => {
+                        const liveProp = allBankProps.find(bp => bp.id === propID || bp.data.address === propID);
+                        const currentAddr = liveProp ? liveProp.data.address : propID;
                         return `
                             <span class="rating-badge" title="לחצי לעריכת הנכס" style="cursor:pointer;" onclick="window.quickEditProp('${currentAddr}')">
                                 ${currentAddr} (${stars}⭐)
@@ -196,7 +188,7 @@ function initAllSnapshots() {
                             </div>
                         </td>
                         <td style="vertical-align: top;">
-                            <div style="background: #222; color: #FFD700; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid #333; font-weight: bold; width: fit-content;">${roadmapText}</div>
+                            <div class="roadmap-step-badge">${roadmapText}</div>
                         </td>
                         <td style="width: 200px;">
                             <div style="max-height: 80px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border: 1px solid #222; border-radius: 8px; background: #0a0a0a;">

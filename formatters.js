@@ -55,6 +55,13 @@ window.formatNumberWithCommas = function(input) {
     }
 };
 
+// מחזיר את התאריך של היום בפורמט YYYY-MM-DD לפי שעון מקומי (ישראל)
+window.getTodayLocal = function() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000; // הפרש דקות במילישניות
+    const localISOTime = (new Date(now - offset)).toISOString().slice(0, 10);
+    return localISOTime;
+};
 
 // פונקציה לעיצוב תאריך ושעה לפורמט ישראלי
 window.formatDateTime = function(isoString, includeTime = true) {
