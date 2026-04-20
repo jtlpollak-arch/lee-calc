@@ -185,7 +185,7 @@
 
         .selected-badge { position: absolute; top: 10px; left: 10px; background: var(--secondary); color: var(--primary); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: bold; z-index: 5; display: flex; align-items: center; gap: 4px; pointer-events: none; }
         
-        .budget-badge { position: absolute; top: 10px; left: 135px; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 5px; z-index: 5; pointer-events: none; }
+        .budget-badge { position: absolute; top: 20px; left: 20px; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 5px; z-index: 5; pointer-events: none; }
         .budget-badge.ok { background: #e6fffa; color: #27ae60; border: 1px solid #b2f5ea; }
         .budget-badge.over { background: #fff5f5; color: #e74c3c; border: 1px solid #feb2b2; }
 
@@ -286,6 +286,38 @@
         @media (max-width: 900px) { .prop-grid { grid-template-columns: 1fr; } .finance-grid { grid-template-columns: 1fr; } }
 
         #checklist-modal { display: none; align-items: center; justify-content: center; }
+
+        .featured-seal {
+            position: absolute;
+            bottom: 55px; /* ממוקם בדיוק מעל כפתורי הפעולה */
+            left: 55px;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #D4AF37, #F9F295, #D4AF37);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.5);
+            border: 2px dashed #B8860B;
+            z-index: 10;
+            transform: rotate(-10deg); /* הטיה קלה למראה של חותמת ידנית */
+            color: #1a1a1a;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .featured-seal i {
+            margin-bottom: 2px;
+        }
+
+        .featured-seal span {
+            font-size: 9px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -630,7 +662,7 @@
                 (p.propertyId && bp.id === p.propertyId) || (p.id && bp.id === p.id) || (bp.address === p.address)
             );
             const combined = bankMatch ? 
-                { ...p, ...bankMatch, id: bankMatch.id, address: bankMatch.address } : 
+                { ...bankMatch, ...p, id: bankMatch.id } : 
                 { ...p, status: 'ACTIVE' };
             return { ...combined, matchPercent: calculatePropMatch(combined, currentProjectData) };
         });
@@ -659,8 +691,22 @@
 
     window.selectPropForCalc = async (price, id) => {
         if(!clientID) return;
-        await updateDoc(doc(db, "projects", clientID), { purchasePrice: price });
-        alert(`נכס נבחר לחישוב פיננסי`);
+        
+        // 1. ניקוי המחיר למספר טהור
+        const cleanPrice = FinanceLogic.cleanNumber(price);
+        
+        // 2. עדכון השדה של "מחיר מכירה" ב-Firebase (salePrice במקום purchasePrice)
+        await updateDoc(doc(db, "projects", clientID), { 
+            salePrice: cleanPrice 
+        });
+        
+        // 3. עדכון ויזואלי של השדה בטאב "עסקת המכירה" (הימני בתמונה שלך)
+        const saleInput = document.getElementById('in-salePrice');
+        if (saleInput) {
+            saleInput.value = FinanceLogic.formatNumber(cleanPrice);
+        }
+        
+        alert(`הנכס נבחר והמחיר עודכן בטאב המכירה.`);
     };
 
     window.updateRating = async (id, rating) => {
@@ -711,9 +757,36 @@
             const isInactive = p.status !== 'ACTIVE';
             const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
             const currentRating = ratings[p.id] || ratings[p.address] || 0; // תמיכה לאחור בכתובת וגישה ל-ID
-            const sim = FinanceLogic.calculateAll({ ...currentProjectData, ...adminSettings, purchasePrice: p.price });
-            const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance) || 0;
-            const isOk = sim.finalBalance >= targetBal;
+            // יצירת נתונים נקיים לחישוב כדי למנוע מצב של Final=0
+            // חישוב יתרה נזילה עבור הנכס הספציפי בכרטיס
+            const totalIn = FinanceLogic.cleanNumber(currentProjectData.salePrice || 0);
+
+            const saleFees = (
+                (FinanceLogic.cleanNumber(currentProjectData.brokerageRateSale || 0) * totalIn / 100) + 
+                (FinanceLogic.cleanNumber(currentProjectData.lawyerRateSale || 0) * totalIn / 100)
+            ) * 1.18;
+
+            // חישוב עמלות קנייה (תיווך + עו"ד) כולל מע"מ - לפי מחיר הנכס הספציפי p.price
+            const purchasePriceClean = FinanceLogic.cleanNumber(currentProjectData.purchasePrice || 0);
+            const purchaseFees = (
+                (FinanceLogic.cleanNumber(currentProjectData.brokerageRatePurch || 0) * purchasePriceClean / 100) + 
+                (FinanceLogic.cleanNumber(currentProjectData.lawyerRatePurch || 0) * purchasePriceClean / 100)
+            ) * 1.18;
+            
+            const totalOut = 
+                FinanceLogic.cleanNumber(currentProjectData.mortgageBalance || 0) + 
+                FinanceLogic.cleanNumber(currentProjectData.purchasePrice || 0) + 
+                FinanceLogic.cleanNumber(currentProjectData.renovationBudget || 0) + 
+                saleFees + purchaseFees;
+
+            const currentFinalBal = totalIn - totalOut;
+            const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance || 0);
+            
+            const isOk = currentFinalBal >= targetBal;
+
+            // הלוג המעודכן - עכשיו אתה אמור לראות מספרים אמיתיים
+            console.log(`Property: ${p.address} | Final: ${currentFinalBal} | Target: ${targetBal} | Match: ${isOk}`);
+            
             const matchScore = p.matchPercent || 0;
             const matchColor = matchScore > 80 ? 'var(--safe)' : (matchScore > 50 ? 'var(--primary)' : '#7f8c8d');
 
@@ -723,7 +796,12 @@
             }
             
             let statusOverlay = p.status === 'SOLD' ? '<div class="prop-status-overlay"><div class="status-stamp">נמכר!</div></div>' : (p.status === 'BOUGHT' ? '<div class="prop-status-overlay"><div class="status-stamp status-bought">נקנה!</div></div>' : '');
-            let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
+//            let featuredRibbon = p.featured ? '<div class="featured-ribbon"><span>נבחר השבוע</span></div>' : '';
+let featuredSeal = p.featured ? `
+    <div class="featured-seal">
+        <i data-lucide="award" size="20"></i>
+        <span>נבחר<br>השבוע</span>
+    </div>` : '';
             const links = p.links || (p.link ? [p.link] : []);
             let linkUI = '';
             
@@ -749,13 +827,13 @@
 
             return `
             <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
-                ${featuredRibbon}${statusOverlay}
+                ${statusOverlay}${featuredSeal}
                 <div class="budget-badge ${isOk ? 'ok' : 'over'}">
                     <i data-lucide="${isOk ? 'check-circle' : 'alert-circle'}" size="14"></i> ${isOk ? 'מתאים' : 'חריגה'}
                 </div>
                 ${isSelected ? '<div class="selected-badge">במחשבון</div>' : ''}
                 <div class="prop-main-info ${isInactive ? 'disabled-actions' : ''}">
-                    ${p.propertyType ? `<div class="type-badge"><i data-lucide="${typeIcons[p.propertyType] || 'home'}" size="12"></i> ${p.propertyType}</div>` : ''}
+                    ${p.type ? `<div class="type-badge"><i data-lucide="${typeIcons[p.type] || 'home'}" size="12"></i> ${p.type}</div>` : ''}
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
                          <span style="font-size:11px; font-weight:bold; color:${matchColor}; display:flex; align-items:center; gap:4px;"><i data-lucide="zap" size="12"></i> התאמה אישית</span>
                          <span style="font-size:11px; font-weight:bold; color:${matchColor};">${matchScore}%</span>
@@ -835,7 +913,7 @@
             document.getElementById('final-bal').innerText = res.finalBalance.toLocaleString();
             const card = document.getElementById('main-summary-card');
             const warn = document.getElementById('balance-warning');
-const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance) || 0;
+const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance || 0);
 
 if (res.finalBalance < targetBal) { 
     card.classList.add('negative-balance'); 
