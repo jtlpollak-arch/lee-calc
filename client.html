@@ -318,6 +318,31 @@
             font-size: 9px;
             text-transform: uppercase;
         }
+
+        /* שיפור מבנה כרטיס הסיכום המרכזי */
+.main-summary-card .card-content {
+    display: flex !important;
+    flex-direction: column !important; /* מעבר למבנה אנכי */
+    align-items: center !important;    /* מירכוד אופקי של כל האלמנטים */
+    justify-content: center !important;
+    gap: 15px;
+    width: 100%;
+}
+
+/* סידור הנתונים (המספרים) בשורה אחת ממורכזת מעל הגרף */
+.main-summary-card .finance-stats {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+/* הבטחת מירכוד הגרף */
+.main-summary-card canvas {
+    max-width: 160px !important; /* גודל אופטימלי למירכוד */
+    margin: 0 auto !important;
+}
     </style>
 </head>
 <body>
@@ -420,6 +445,7 @@
                 <div class="input-wrapper" style="margin-top:20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px;"><label style="color:var(--primary)">🎯 יעד יתרה רצוי בסיום:</label><input type="text" id="in-targetBalance" class="finance-input u-input" style="background: white; color: black;" placeholder="הזינו יעד (למשל: 200,000)"></div>
             </div>
             <div class="chart-box"><canvas id="mainChart"></canvas></div>
+            <div id="mortgage-calc-container"></div>
         </div>
 
         <div class="finance-grid">
@@ -544,6 +570,37 @@
 <div id="ai-modal" class="modal-overlay">
     <div class="modal-content"><span class="close-x" onclick="closeAi()"><i data-lucide="x"></i></span><h2 style="color:var(--purple);"><i data-lucide="sparkles"></i> תיאור ואפיון (ניתוח)</h2><div id="ai-body" style="white-space:pre-wrap; line-height:1.7;"></div></div>
 </div>
+
+
+<style>
+    /* CSS שמבטיח שהמודאל יצוף במרכז המסך ולא בתחתית */
+    #mortgage-modal {
+        display: none; 
+        position: fixed; /* חשוב! גורם לו לצוף מעל הכל */
+        z-index: 9999; 
+        left: 0; top: 0; 
+        width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.8); 
+        justify-content: center; 
+        align-items: center;
+    }
+    .mortgage-modal-content {
+        background: white; 
+        padding: 25px; 
+        border-radius: 20px; 
+        width: 90%; 
+        max-width: 450px; 
+        position: relative;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+</style>
+<div id="mortgage-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <span class="close-btn" onclick="closeMortgageModal()">&times;</span>
+        <iframe id="mortgage-iframe" src="" style="width:100%; height:550px; border:none;"></iframe>
+    </div>
+</div>
+
 
 <a href="https://wa.me/972533386345" class="whatsapp-float"><i data-lucide="phone" size="32"></i></a>
 
@@ -915,14 +972,55 @@ let featuredSeal = p.featured ? `
             const warn = document.getElementById('balance-warning');
 const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance || 0);
 
+let mortgageSuggestion = '';
+
 if (res.finalBalance < targetBal) { 
     card.classList.add('negative-balance'); 
     warn.style.display = 'block'; 
-    warn.innerHTML = `<i data-lucide="alert-octagon" size="16"></i> שימו לב: יתרה נמוכה מהיעד שהצבתם (${targetBal.toLocaleString()} ₪)`;
+    
+    const gap = targetBal - res.finalBalance;
+
+    // הזרקת אזהרה וכפתור ממורכזים
+    warn.innerHTML = `
+        <div style="text-align: center;">
+            <div style="margin-bottom: 8px;">
+                <i data-lucide="alert-octagon" size="16" style="vertical-align: middle;"></i> 
+                שימו לב: פער מהיעד של ${gap.toLocaleString()} ₪
+            </div>
+            <button onclick="window.openMortgageCalc(${gap})" 
+                    style="background: white; color: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 5px;">
+                <i data-lucide="calculator" size="16"></i>
+                פתרון פער: בדיקת משכנתא
+            </button>
+        </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
 } else { 
     card.classList.remove('negative-balance'); 
     warn.style.display = 'none'; 
 }
+
+// *** זה השינוי הקריטי ***
+// אנחנו מחפשים את אזור התוכן בתוך הכרטיס המרכזי ומצמידים אליו את הכפתור
+const cardContent = card.querySelector('.card-content') || card; 
+const existingCalc = document.getElementById('mortgage-calc-container');
+
+if (existingCalc) existingCalc.remove(); // מונע כפילות של הכפתור בריענון
+
+if (mortgageSuggestion) {
+    cardContent.insertAdjacentHTML('beforeend', mortgageSuggestion);
+    // הפעלה מחדש של האייקונים כדי שהמחשבון ייראה
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// 3. הזרקה ל-HTML - וודא שיש לך אלמנט ייעודי בתוך הרובליקה בשביל זה
+// למשל, אם לאלמנט של הרובליקה קוראים financeInfo:
+const suggestionContainer = document.getElementById('mortgage-suggestion-container');
+if (suggestionContainer) {
+    suggestionContainer.innerHTML = mortgageSuggestion;
+}
+
 lucide.createIcons();
             document.getElementById('out-brS').value = FinanceLogic.formatNumber(res.brokerageFeeSale);
             document.getElementById('out-lwS').value = FinanceLogic.formatNumber(res.lawyerFeeSale);
@@ -1052,5 +1150,24 @@ lucide.createIcons();
         });
     }, true);
 </script>
+<script>
+    // פונקציות גלובליות שזמינות מיד לכל כפתור דינמי
+    window.openMortgageCalc = function(gap) {
+        console.log("פתיחת מחשבון עבור פער של:", gap);
+        const modal = document.getElementById('mortgage-modal');
+        const iframe = document.getElementById('mortgage-iframe');
+        
+        if (modal && iframe) {
+            iframe.src = `mortgage-calc.html?gap=${gap}`;
+            modal.style.display = 'flex';
+        }
+    };
+
+    window.closeMortgageModal = function() {
+        const modal = document.getElementById('mortgage-modal');
+        if (modal) modal.style.display = 'none';
+    };
+</script>
+
 </body>
 </html>

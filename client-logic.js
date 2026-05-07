@@ -289,4 +289,17 @@ window.addEventListener('click', (e) => {
     }
 });
 
+window.addEventListener('message', async function(event) {
+    if (event.data.type === 'UPDATE_MORTGAGE') {
+        const newAmount = event.data.amount;
+        // עדכון השדה ב-UI
+        document.getElementById('mortgageBalance').value = newAmount;
+        // קריאה לפונקציית השמירה הקיימת שלך (למשל saveFinanceData)
+        if (typeof saveFinanceData === "function") {
+            await saveFinanceData();
+        }
+        window.closeMortgageModal();
+    }
+});
+
 lucide.createIcons();
