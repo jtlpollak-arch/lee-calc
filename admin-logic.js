@@ -91,6 +91,9 @@ async function init() {
 
             const nameDisp = document.getElementById('client-name-display');
             if (nameDisp) nameDisp.innerText = d.clientName || "לקוח ללא שם";
+            const catalogCheckbox = document.getElementById('in-isCatalog');
+            if (catalogCheckbox) { catalogCheckbox.checked = d.isCatalog || false; }
+            
             if (document.getElementById('client-name-title')) document.getElementById('client-name-title').innerText = d.clientName || "לקוח ללא שם";
             if (document.getElementById('in-clientName')) document.getElementById('in-clientName').value = d.clientName || "";
 
@@ -150,6 +153,7 @@ document.getElementById('btn-save-all').onclick = async () => {
     console.log("currentRatings:", currentRatings);
 
     const data = {
+        isCatalog: document.getElementById('in-isCatalog')?.checked || false,
         clientName: document.getElementById('in-clientName')?.value || "",
         status: document.getElementById('in-status')?.value || "INITIAL",
         clientPhone: document.getElementById('in-clientPhone')?.value || "",

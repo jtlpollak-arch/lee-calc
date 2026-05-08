@@ -397,8 +397,16 @@
     <nav class="tab-nav">
         <button class="tab-btn active" onclick="switchTab('properties')"><i data-lucide="home"></i> <span>נכסים</span></button>
         <button class="tab-btn" onclick="switchTab('finance')"><i data-lucide="pie-chart"></i> <span>פיננסי</span></button>
-        <button class="tab-btn" onclick="switchTab('providers')"><i data-lucide="users"></i> <span>הנבחרת של לי</span></button>
-        <button class="tab-btn" onclick="switchTab('consult')"><i data-lucide="search"></i> <span>ניתוח חיצוני</span></button>
+
+        <button class="tab-btn" 
+                onclick="window.isCatalogMode ? alert('הגישה לנבחרת המומחים זמינה ללקוחות בלבד') : switchTab('providers')">
+            <i data-lucide="users"></i> <span>הנבחרת של לי</span>
+        </button>
+
+        <button class="tab-btn" 
+                onclick="window.isCatalogMode ? alert('ניתוח חיצוני זמין ללקוחות בלבד') : switchTab('consult')">
+            <i data-lucide="search"></i> <span>ניתוח חיצוני</span>
+        </button>
     </nav>
 
     <div id="tab-properties" class="tab-content active">
@@ -571,6 +579,45 @@
     <div class="modal-content"><span class="close-x" onclick="closeAi()"><i data-lucide="x"></i></span><h2 style="color:var(--purple);"><i data-lucide="sparkles"></i> תיאור ואפיון (ניתוח)</h2><div id="ai-body" style="white-space:pre-wrap; line-height:1.7;"></div></div>
 </div>
 
+<div id="lead-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; position:relative; text-align:center;">
+        <span onclick="document.getElementById('lead-modal').style.display='none'" style="position:absolute; top:10px; left:10px; cursor:pointer; font-size:24px;">&times;</span>
+        <h3 style="margin-bottom:20px; color:var(--primary);">נשמע מעניין!</h3>
+        <p>השאירו פרטים ונתאם לכם סיור בנכס</p>
+        
+        <form id="lead-form" style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+    <input type="text" id="lead-name" placeholder="שם מלא" required style="padding:12px; border:1px solid #ddd; border-radius:8px;">
+    <input type="tel" id="lead-phone" placeholder="טלפון" required style="padding:12px; border:1px solid #ddd; border-radius:8px;">
+    
+    <p style="margin: 5px 0; font-size: 0.9em;">איך לחזור אליך?</p>
+    <div style="display:flex; justify-content:center; gap:20px; margin-bottom:10px;">
+        <label style="cursor:pointer; text-align:center;">
+            <input type="radio" name="contact-method" value="whatsapp" checked style="display:none;">
+            <div class="method-icon" style="font-size:24px; padding:10px; border:2px solid #eee; border-radius:10px;">🟢</div>
+            <span style="font-size:12px;">וואטסאפ</span>
+        </label>
+        <label style="cursor:pointer; text-align:center;">
+            <input type="radio" name="contact-method" value="phone" style="display:none;">
+            <div class="method-icon" style="font-size:24px; padding:10px; border:2px solid #eee; border-radius:10px;">📞</div>
+            <span style="font-size:12px;">טלפון</span>
+        </label>
+        <label style="cursor:pointer; text-align:center;">
+            <input type="radio" name="contact-method" value="email" style="display:none;">
+            <div class="method-icon" style="font-size:24px; padding:10px; border:2px solid #eee; border-radius:10px;">✉️</div>
+            <span style="font-size:12px;">מייל</span>
+        </label>
+    </div>
+
+    <button type="submit" style="background:var(--primary); color:white; border:none; padding:15px; border-radius:8px; cursor:pointer; font-weight:bold;">שלח בקשה</button>
+</form>
+
+<style>
+    /* עיצוב קטן כדי לסמן מה נבחר */
+    input[type="radio"]:checked + .method-icon { border-color: var(--primary); background: #fdfae9; }
+</style>
+    </div>
+</div>
+
 
 <style>
     /* CSS שמבטיח שהמודאל יצוף במרכז המסך ולא בתחתית */
@@ -603,6 +650,8 @@
 
 
 <a href="https://wa.me/972533386345" class="whatsapp-float"><i data-lucide="phone" size="32"></i></a>
+
+<script type="module" src="client-logic.js"></script>
 
 <script type="module">
     import { db } from './firebase-config.js';
@@ -920,8 +969,13 @@ let featuredSeal = p.featured ? `
                         <button class="icon-btn ${favs.includes(p.id) ? 'active-fav' : ''}" onclick="window.tFav('${p.id}', ${favs.includes(p.id)})"><i data-lucide="heart" size="18" fill="${favs.includes(p.id) ? '#e74c3c' : 'none'}"></i></button>
                     </div>
                     <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.id}')">בחר</button>
-                    <button class="btn-quick-action" style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff;" onclick="window.openChecklist('${p.id}', '${p.address.replace(/'/g, "\\'")}')"><i data-lucide="clipboard-check" size="14"></i> צ'ק-ליסט סיור</button>
-                    <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA('${p.address}, ${p.city || ''}')">תאמי לי סיור 🏠</button>
+                    <button class="btn-quick-action" 
+                            style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff; ${window.isCatalogMode ? 'opacity:0.6; cursor:not-allowed;' : ''}" 
+                            onclick="${window.isCatalogMode ? "alert('צ\'ק-ליסט סיור זמין ללקוחות VIP בלבד')" : `window.openChecklist('${p.id}', '${p.address.replace(/'/g, "\\'")}')`}">
+                        <i data-lucide="clipboard-check" size="14"></i> 
+                        צ'ק-ליסט סיור
+                    </button>
+                    <button class="btn-quick-action btn-wa-tour" onclick="window.requestTourWA(\`${p.address}${p.city ? ', ' + p.city : ''}\`)">תאמי לי סיור 🏠</button>
                 </div>
             </div>`;
         };
@@ -950,6 +1004,10 @@ let featuredSeal = p.featured ? `
         onSnapshot(doc(db, "projects", clientID), (snap) => {
             if (!snap.exists()) return;
             currentProjectData = snap.data();
+
+            window.isCatalogMode = currentProjectData.isCatalog === true;
+            console.log("Is Catalog Mode Active:", window.isCatalogMode);
+
             const currentRoadmapStep = parseInt(currentProjectData.roadmapStep) || 1;
             updateRoadmap(currentRoadmapStep);
             const settings = {
@@ -970,36 +1028,36 @@ let featuredSeal = p.featured ? `
             document.getElementById('final-bal').innerText = res.finalBalance.toLocaleString();
             const card = document.getElementById('main-summary-card');
             const warn = document.getElementById('balance-warning');
-const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance || 0);
+    const targetBal = FinanceLogic.cleanNumber(currentProjectData.targetBalance || 0);
 
-let mortgageSuggestion = '';
+    let mortgageSuggestion = '';
 
-if (res.finalBalance < targetBal) { 
-    card.classList.add('negative-balance'); 
-    warn.style.display = 'block'; 
-    
-    const gap = targetBal - res.finalBalance;
+    if (res.finalBalance < targetBal) { 
+        card.classList.add('negative-balance'); 
+        warn.style.display = 'block'; 
+        
+        const gap = targetBal - res.finalBalance;
 
-    // הזרקת אזהרה וכפתור ממורכזים
-    warn.innerHTML = `
-        <div style="text-align: center;">
-            <div style="margin-bottom: 8px;">
-                <i data-lucide="alert-octagon" size="16" style="vertical-align: middle;"></i> 
-                שימו לב: פער מהיעד של ${gap.toLocaleString()} ₪
+        // הזרקת אזהרה וכפתור ממורכזים
+        warn.innerHTML = `
+            <div style="text-align: center;">
+                <div style="margin-bottom: 8px;">
+                    <i data-lucide="alert-octagon" size="16" style="vertical-align: middle;"></i> 
+                    שימו לב: פער מהיעד של ${gap.toLocaleString()} ₪
+                </div>
+                <button onclick="window.openMortgageCalc(${gap})" 
+                        style="background: white; color: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 5px;">
+                    <i data-lucide="calculator" size="16"></i>
+                    פתרון פער: בדיקת משכנתא
+                </button>
             </div>
-            <button onclick="window.openMortgageCalc(${gap})" 
-                    style="background: white; color: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 5px;">
-                <i data-lucide="calculator" size="16"></i>
-                פתרון פער: בדיקת משכנתא
-            </button>
-        </div>
-    `;
+        `;
 
-    if (window.lucide) window.lucide.createIcons();
-} else { 
-    card.classList.remove('negative-balance'); 
-    warn.style.display = 'none'; 
-}
+        if (window.lucide) window.lucide.createIcons();
+    } else { 
+        card.classList.remove('negative-balance'); 
+        warn.style.display = 'none'; 
+    }
 
 // *** זה השינוי הקריטי ***
 // אנחנו מחפשים את אזור התוכן בתוך הכרטיס המרכזי ומצמידים אליו את הכפתור
@@ -1071,7 +1129,6 @@ lucide.createIcons();
     window.closeAbout = () => document.getElementById('about-modal').style.display = 'none';
     window.openAi = (b64) => { document.getElementById('ai-body').innerText = decodeURIComponent(escape(atob(b64))); document.getElementById('ai-modal').style.display = 'flex'; };
     window.closeAi = () => document.getElementById('ai-modal').style.display = 'none';
-    window.requestTourWA = (a) => window.open(`https://wa.me/972533386345?text=${encodeURIComponent(`לי, שלום! ראיתי בפורטל האישי את הנכס ב${a} ואשמח מאוד לתאם בו סיור. תודה רבה!`)}`, '_blank');
 
     window.analyzeExternal = async () => {
         const link = document.getElementById('external-link-input').value;

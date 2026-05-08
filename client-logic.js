@@ -10,6 +10,7 @@ let bankProperties = [];
 let chart, mChart;
 let currentCityFilter = 'הכל';
 let financeSettings = { sellBroker: 2, sellLawyer: 0.5, buyBroker: 2, buyLawyer: 0.5 };
+let isCatalogMode = false;
 
 async function loadFinanceSettings() {
     const snap = await getDoc(doc(db, "settings", "finance_config"));
@@ -20,7 +21,7 @@ async function fetchBankData() {
     const snap = await getDocs(collection(db, "property_bank"));
     bankProperties = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
-
+/*
 function initCharts() {
     const config = {
         type: 'doughnut',
@@ -128,7 +129,7 @@ window.setFilter = (city) => {
     currentCityFilter = city;
     renderPortal();
 };
-
+*/
 // פונקציית עזר לזיהוי אתרים
 function getSiteName(url) {
     if (url.includes('yad2.co.il')) return 'Yad2';
@@ -301,5 +302,64 @@ window.addEventListener('message', async function(event) {
         window.closeMortgageModal();
     }
 });
+
+window.requestTourWA = (address) => {
+    if (window.isCatalogMode) {
+        const leadModal = document.getElementById('lead-modal');
+        if (leadModal) {
+            // שמירת הכתובת לצורך משלוח מאוחר יותר
+            leadModal.dataset.interestedAddress = address;
+            
+            const modalTitle = leadModal.querySelector('h3');
+            if (modalTitle) modalTitle.innerText = "מעוניינים בסיור בנכס " + address + "?";
+            
+            leadModal.style.display = 'flex';
+        } else {
+            alert("האופציה לתיאום סיור זמינה ללקוחות VIP בלבד.");
+        }
+        return;
+    }
+
+    // לוגיקת VIP מקורית - פתיחת וואטסאפ ישירה
+    const waText = encodeURIComponent(`לי, שלום! ראיתי בפורטל האישי את הנכס ב${address} ואשמח מאוד לתאם בו סיור. תודה רבה!`);
+    window.open(`https://wa.me/972533386345?text=${waText}`, '_blank');
+};
+
+// מאזין לשליחת טופס הלידים (מודאל קטלוג)
+const leadForm = document.getElementById('lead-form');
+if (leadForm) {
+    leadForm.onsubmit = (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('lead-name').value;
+        const phone = document.getElementById('lead-phone').value;
+        const location = document.getElementById('lead-modal').dataset.interestedAddress || "נכס כללי";
+        const method = leadForm.querySelector('input[name="contact-method"]:checked').value;
+
+        const subject = `בקשת סיור בנכס: ${location}`;
+        const bodyText = `היי לי, אני ${name}, מעוניין בסיור ב${location}. נא לחזור אליי ב${method === 'whatsapp' ? 'וואטסאפ' : method === 'phone' ? 'טלפון' : 'מייל'}. טלפון שלי: ${phone}`;
+
+        if (method === 'whatsapp') {
+            window.open(`https://wa.me/972533386345?text=${encodeURIComponent(bodyText)}`, '_blank');
+        } 
+        else if (method === 'phone') {
+            // זה פשוט פותח את החייגן
+            window.location.href = `tel:0533386345`;
+        } 
+        else if (method === 'email') {
+            const myEmail = "leeatadgi@gmail.com"; // המייל שלך
+            const subject = `בקשת סיור בנכס: ${location}`;
+            const bodyText = `היי לי, אני ${name}, מעוניין בסיור ב${location}. נא לחזור אליי במייל. טלפון שלי: ${phone}`;
+
+            // יצירת קישור ישיר ל-Gmail במקום mailto רגיל
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${myEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+            
+            window.open(gmailUrl, '_blank');
+        }
+
+        document.getElementById('lead-modal').style.display = 'none';
+        leadForm.reset();
+    };
+}
 
 lucide.createIcons();
