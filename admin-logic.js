@@ -221,7 +221,7 @@ function renderAssigned() {
     if (!container) return;
     container.innerHTML = currentProperties.map((p, i) => {
         const liveProp = allBankProperties.find(bp => bp.id === (p.propertyId || p.id));
-        const addr = liveProp ? liveProp.address : p.address;
+        const addr = liveProp ? `${liveProp.address}${liveProp.city ? ', ' + liveProp.city : ''}` : p.address;
         return `
         <div class="assigned-prop" style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:10px; border-right:4px solid #2c3e50;">
             <div style="font-weight:bold;">${addr}</div>
@@ -398,7 +398,7 @@ function renderBankList() {
             <div class="bank-item ${isSelected ? 'selected' : ''}" 
                  onclick="window.toggleBankSelection('${p.id}')" 
                  style="padding:15px; border-bottom:1px solid #eee; cursor:pointer; position:relative;">
-                <div style="font-weight:bold;">${p.address || "ללא כתובת"}</div>
+                <div style="font-weight:bold;">${p.address || "ללא כתובת"}${p.city ? ', ' + p.city : ''}</div>
                 <div style="font-size:12px; color:#666;">₪${Number(p.price || 0).toLocaleString()}</div>
                 ${isSelected ? '<span style="position:absolute; left:20px; top:50%; transform:translateY(-50%); color:green; font-weight:bold;">✓</span>' : ''}
             </div>`;

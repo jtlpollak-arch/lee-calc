@@ -183,7 +183,7 @@
         <div class="prop-card">
             ${isArchive ? `<div class="prop-status-overlay"><div class="status-stamp">${statusStamp}</div></div>` : ''}
             <div class="prop-main-info">
-                <div class="prop-address">${p.address}, ${p.city || ''}</div>
+                <div class="prop-address">${p.address}, ${p.city}</div>
                 <div class="prop-price">₪${(p.price || 0).toLocaleString()}</div>
                 <div class="prop-specs">
                     <div class="spec-item"><i data-lucide="maximize" size="14"></i> ${p.sqm} מ"ר</div>
