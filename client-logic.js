@@ -460,11 +460,18 @@ lucide.createIcons();
     function updateCityFilters(props) {
         const container = document.getElementById('filters-container');
         if(!container) return;
+
+        // הוספת השורות האלו תגרום לכפתורים לרדת שורה בצורה מסודרת
+        container.style.display = "flex";
+        container.style.flexWrap = "wrap";
+        container.style.gap = "8px";
+
         const cities = [...new Set(props.map(p => p.city || 'כללי'))];
         let html = `<button class="tab-btn ${currentCityFilter === 'הכל' ? 'active' : ''}" onclick="window.setFilter('הכל')" style="max-width:80px; padding:10px;">הכל</button>`;
         html += cities.map(c => `<button class="tab-btn ${currentCityFilter === c ? 'active' : ''}" onclick="window.setFilter('${c}')" style="max-width:100px; padding:10px;">${c}</button>`).join('');
         container.innerHTML = html;
     }
+    
     window.setFilter = (city) => { 
         currentCityFilter = city; 
         const updatedProps = (currentProjectData.properties || []).map(p => {
