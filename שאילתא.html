@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחולל שאילתא: לי אטדגי</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22;
+            --bg-color: #f4f7f6;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: var(--primary-color);
+        }
+        label.required::after {
+            content: " *";
+            color: var(--error-color);
+        }
+        input, select {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-color);
+        }
+        input.invalid, select.invalid {
+            border-color: var(--error-color);
+            background-color: #fdf2f2;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .btn-generate {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .btn-clear {
+            background-color: #bdc3c7;
+            color: #34495e;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #output-area {
+            margin-top: 30px;
+            display: none;
+            border-top: 2px dashed #ddd;
+            padding-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            font-size: 14px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .copy-btn {
+            background-color: var(--success-color);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .link-note {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .link-note a {
+            color: var(--accent-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        @media (max-width: 600px) {
+            .grid-form { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .button-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>מחולל שאילתא: לי אטדגי</h1>
+    
+    <div class="grid-form">
+        <div class="form-group full-width">
+            <label class="required">כתובת (רחוב ומספר):</label>
+            <input type="text" id="street" placeholder="למשל: העצמאות 10">
+        </div>
+        <div class="form-group">
+            <label class="required">עיר:</label>
+            <input type="text" id="city" placeholder="למשל: פתח תקווה">
+        </div>
+        <div class="form-group">
+            <label>סוג נכס:</label>
+            <select id="p-type">
+                <option value="">בחרי סוג נכס...</option>
+                <option value="דירה">🏢 דירה: מגורים סטנדרטית</option>
+                <option value="דירת גן">🏡 דירת גן: קומת קרקע + חצר</option>
+                <option value="פנטהאוז">🏙️ גג/פנטהאוז: קומה אחרונה + גג</option>
+                <option value="דופלקס">🪜 דופלקס: שתי קומות</option>
+                <option value="מרתף">🕳️ מרתף/פרטר: תת-קרקעי</option>
+                <option value="טריפלקס">🏢 טריפלקס: שלוש קומות</option>
+                <option value="יחידת דיור">🏠 יחידת דיור: יחידה עצמאית</option>
+                <option value="סטודיו">🎨 סטודיו/לופט: חלל פתוח</option>
+                <option value="בית פרטי">🏰 בית פרטי/קוטג': מבנה עצמאי</option>
+                <option value="דו משפחתי">🏘️ דו משפחתי: קיר משותף</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="required">מחיר מבוקש (₪):</label>
+            <input type="text" id="price" placeholder="למשל: 3,200,000" oninput="formatPrice(this)">
+        </div>
+        <div class="form-group">
+            <label class="required">שטח (מ"ר):</label>
+            <input type="number" id="sqm" placeholder="למשל: 120">
+        </div>
+        <div class="form-group">
+            <label>מספר חדרים:</label>
+            <input type="number" id="rooms" step="0.5" placeholder="למשל: 4.5">
+        </div>
+        <div class="form-group">
+            <label>קומה:</label>
+            <input type="text" id="floor" placeholder="למשל: 4 מתוך 9">
+        </div>
+        <div class="form-group">
+            <label>כיווני אוויר:</label>
+            <input type="text" id="directions" placeholder="למשל: צפון, מערב">
+        </div>
+        <div class="form-group">
+            <label>מעלית:</label>
+            <select id="elevator">
+                <option value="">-- בחר --</option>
+                <option value="יש">יש מעלית</option>
+                <option value="אין">אין מעלית</option>
+            </select>
+        </div>
+        <div class="form-group full-width">
+            <label>חניות:</label>
+            <input type="text" id="parking" placeholder="למשל: 2 חניות בטאבו">
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn-generate" onclick="generatePrompt()">צרי שאילתא למחקר</button>
+        <button class="btn-clear" onclick="clearForm()">ניקוי</button>
+    </div>
+
+    <div id="output-area">
+        <label>השאילתא המוכנה להדבקה ב-Gemini:</label>
+        <textarea id="finalPrompt" readonly></textarea>
+        <button class="copy-btn" onclick="copyToClipboard()">העתק והמשך ל-Gemini</button>
+        <div class="link-note">
+            לאחר ההעתקה, הדביקי בכתובת: <a href="https://gemini.google.com" target="_blank">gemini.google.com</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatPrice(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value !== "") {
+            input.value = Number(value).toLocaleString();
+        } else {
+            input.value = "";
+        }
+    }
+
+    function generatePrompt() {
+        const requiredFields = [
+            { id: 'street', name: 'כתובת' },
+            { id: 'city', name: 'עיר' },
+            { id: 'price', name: 'מחיר' },
+            { id: 'sqm', name: 'שטח' }
+        ];
+
+        let isValid = true;
+        let missingFields = [];
+
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (!element.value.trim()) {
+                element.classList.add('invalid');
+                isValid = false;
+                missingFields.push(field.name);
+            } else {
+                element.classList.remove('invalid');
+            }
+        });
+
+        if (!isValid) {
+            alert("שדות חובה: " + missingFields.join(", "));
+            return;
+        }
+
+        const rawData = {
+            "סוג נכס": document.getElementById('p-type').value || null,
+            "כתובת": document.getElementById('street').value + ", " + document.getElementById('city').value,
+            "מחיר מבוקש": document.getElementById('price').value + ' ₪',
+            "שטח": document.getElementById('sqm').value + ' מ"ר',
+            "מספר חדרים": document.getElementById('rooms').value || null,
+            "קומה": document.getElementById('floor').value || null,
+            "כיוון": document.getElementById('directions').value || null,
+            "מעלית": document.getElementById('elevator').value || null,
+            "חניות": document.getElementById('parking').value || null
+        };
+
+        let propertyDetails = "";
+        for (const [key, value] of Object.entries(rawData)) {
+            if (value && value.toString().trim() !== "") {
+                propertyDetails += `${key}: ${value}, `;
+            }
+        }
+        propertyDetails = propertyDetails.replace(/, $/, "");
+
+        const location = document.getElementById('street').value + " " + document.getElementById('city').value;
+
+        const fullPrompt = `משימת מחקר מקדימה (חובה):
+בצעי חיפוש מקוון עדכן (Google Search) כדי לאתר את הנתונים הבאים עבור הנכס בכתובת: ${location}:
+1. עסקאות נדל"ן אמיתיות שבוצעו ב-12 החודשים האחרונים ברחוב זה ובסביבה (מתוך נתוני רשות המיסים/מדלן).
+2. מוסדות חינוך בולטים (בתי ספר וגני ילדים) בקרבת הכתובת ודירוגם.
+3. מרחק הליכה/נסיעה מדויק לתחנת הרכבת הקרובה ביותר ולחוף הים.
+4. תוכניות פיתוח עירוניות או תשתיות חדשות המתוכננות באזור.
+
+לאחר איסוף הנתונים, בצעי את הניתוח הבא:
+בתור סוכנת נדל"ן מומחית ומנוסה בשם לי אטדגי, נתחי את הנכס הבא:
+${propertyDetails}.
+
+מבנה התשובה:
+פתיחה: פתחי במשפט 'היי' + סמיילי ידידותי ! תיאור הנכס לפי הפרטים שצורפו. משפט פתיחה אישי על האזור.
+ניתוח מקצועי (5 סעיפים):
+🎯 למי הנכס מתאים: [משפחה צעירה / משקיעים / משדרגי דיור].
+👥 שכנים ואוכלוסייה: אופי השכונה, חתך סוציו-אקונומי וקהל היעד (משפחות/צעירים).
+🎓 חינוך: מוסדות בולטים, דירוג קרבה ואיכות מוסדות הלימוד.
+🚆 תחבורה: נגישות לצירים ראשיים, תחבורה ציבורית ומרחק לרכבת/רכבת קלה.
+💰 שוק ופוטנציאל: ניתוח כדאיות המחיר ביחס לעסקאות דומות באזור.
+רשימת עסקאות דומות שבוצעו לאחרונה ברחוב (מבוסס נתוני רשות המיסים/מדלן).
+📈 צפי עליית ערך (פוטנציאל השבחה): הערכה באחוזים [X%] ל-3 השנים הקרובות והסבר קצר על הסיבה (תשתיות/ביקוש).
+🛍️ שירותים ופנאי: מרכזים מסחריים, גינות ואיכות חיים בסביבה הקרובה.
+💎 השורה התחתונה של לי (סיכום כדאיות):
+ניסוח שיווקי המדגיש מדוע זו עסקה כדאית/הזדמנות כניסה, תוך פנייה לרגש ולביטחון הכלכלי של הקונה.
+--- (קו הפרדה) ---
+מדדי איכות חיים (1-5 מספרים שלמים):
+חינוך: [מספר] | תחבורה: [מספר] | פנאי: [מספר] | ים: [מספר]
+נתוני מרחק:
+מרחק מרכבת: [דקות הליכה/נסיעה]
+מרחק מהים: [מטרים/ק"מ]
+💡 הטיפ של לי:
+3 משפטים קצרים ומניעים לפעולה (CTA) המדגישים דחיפות (FOMO) והכנה לסיור בנכס.`;
+
+        document.getElementById('finalPrompt').value = fullPrompt;
+        document.getElementById('output-area').style.display = 'block';
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function clearForm() {
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.value = "";
+            input.classList.remove('invalid');
+        });
+        document.getElementById('output-area').style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function copyToClipboard() {
+        const textArea = document.getElementById('finalPrompt');
+        textArea.select();
+        document.execCommand('copy');
+        alert('השאילתא הועתקה בהצלחה! עוברים ל-Gemini...');
+        window.open('https://gemini.google.com', '_blank');
+    }
+</script>
+
+</body>
+</html>
