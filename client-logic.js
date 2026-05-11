@@ -9,8 +9,8 @@ let currentData = {};
 let currentCityFilter = 'הכל';
 let financeSettings = { sellBroker: 2, sellLawyer: 0.5, buyBroker: 2, buyLawyer: 0.5 };
 let isCatalogMode = false;
-
-    let chart, bankProperties = [], currentProjectData = null;
+let chart, bankProperties = [], currentProjectData = null;
+let currentSelectedId = ''
 
     window.switchTab = (tab) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -150,6 +150,7 @@ let isCatalogMode = false;
         
         // 1. ניקוי המחיר למספר טהור
         const cleanPrice = FinanceLogic.cleanNumber(price);
+        window.currentSelectedId = id;
         
         // 2. עדכון השדה של "מחיר מכירה" ב-Firebase (salePrice במקום purchasePrice)
         await updateDoc(doc(db, "projects", clientID), { 
@@ -196,7 +197,7 @@ let isCatalogMode = false;
         
         const favs = currentProjectData.favorites || [];
         const ratings = currentProjectData.ratings || {};
-        const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
+//        const currentSelectedPrice = FinanceLogic.cleanNumber(currentProjectData.purchasePrice);
         const adminSettings = {
             lawyerRateSale: currentProjectData.lawyerRateSale || 0.5,
             lawyerRatePurch: currentProjectData.lawyerRatePurch || 0.5,
@@ -211,7 +212,6 @@ let isCatalogMode = false;
 
         const mapFunction = (p, idx) => {
             const isInactive = p.status !== 'ACTIVE';
-            const isSelected = FinanceLogic.cleanNumber(p.price) === currentSelectedPrice;
             const currentRating = ratings[p.id] || ratings[p.address] || 0; // תמיכה לאחור בכתובת וגישה ל-ID
             // יצירת נתונים נקיים לחישוב כדי למנוע מצב של Final=0
             // חישוב יתרה נזילה עבור הנכס הספציפי בכרטיס
@@ -281,6 +281,8 @@ let isCatalogMode = false;
             const mapQuery = encodeURIComponent(`${p.address}, ${p.city || ''}`);
             const simpleMap = `<iframe class="prop-map" frameborder="0" src="https://maps.google.com/maps?q=${mapQuery}&hl=he&z=15&output=embed"></iframe>`;
 
+            const isSelected = p.id === currentSelectedId;
+
             return `
             <div class="prop-card ${p.featured ? 'is-featured' : ''} ${isSelected ? 'selected-for-calc' : ''}">
                 ${statusOverlay}${featuredSeal}
@@ -322,7 +324,7 @@ let isCatalogMode = false;
                             <i data-lucide="heart" size="18" fill="${favs.includes(p.id) ? '#e74c3c' : 'none'}"></i>
                         </button>
                     </div>
-                    <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.id}')">בחר</button>
+                    <button class="btn-quick-action btn-select-prop ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.id}')">${isSelected ? 'נבחר' : 'בחר'}</button>
                     <button class="btn-quick-action" 
                             style="background:#f0f7ff; color:#0056b3; border:1px solid #c2dbff; ${window.isCatalogMode ? 'opacity:0.6; cursor:not-allowed;' : ''}" 
                             onclick="${window.isCatalogMode ? "alert('צק-ליסט סיור זמין ללקוחות בלבד')" : `window.openChecklist('${p.id}', '${p.address.replace(/'/g, "\\'")}')`}">

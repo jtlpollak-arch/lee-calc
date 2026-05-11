@@ -154,7 +154,7 @@ function createMobileCard(p, favs, idx) {
                         <button class="action-circle-mini" onclick="window.openAiMobile('${b64EncodeUnicode(p.aiAnalysis || "")}')">
                             <i data-lucide="sparkles" size="14"></i>
                         </button>
-                        <button class="btn-select-mini ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.address}')">
+                        <button class="btn-select-mini ${isSelected ? 'active' : ''}" onclick="window.selectPropForCalc(${p.price}, '${p.id}')">
                             ${isSelected ? 'נבחר' : 'בחר'}
                         </button>
                     </div>

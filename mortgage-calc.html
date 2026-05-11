@@ -28,7 +28,7 @@
 
     <div class="input-group">
         <label>סכום המשכנתא הנדרש (₪)</label>
-        <input type="number" id="loanAmount" placeholder="הזן סכום">
+        <input type="text" id="loanAmount" placeholder="הזן סכום" oninput="formatLoanInput(this)">
         <div id="gapNote" class="gap-warning">הוזן אוטומטית לפי הפער בפרויקט</div>
     </div>
 
@@ -56,14 +56,22 @@
         const urlParams = new URLSearchParams(window.location.search);
         const gap = urlParams.get('gap');
         if (gap) {
-            document.getElementById('loanAmount').value = Math.abs(Math.round(gap));
+            const loanInput = document.getElementById('loanAmount');
+            // 1. ניקוי והשמת הערך
+            const rawValue = Math.abs(Math.round(gap));
+            loanInput.value = rawValue;
+            
+            // 2. הפעלת הפורמט באופן ידני כדי שיופיעו פסיקים מיד
+            window.formatLoanInput(loanInput);
+            
             document.getElementById('gapNote').style.display = 'block';
             calculate();
         }
     };
 
     function calculate() {
-        const p = parseFloat(document.getElementById('loanAmount').value) || 0;
+        // שינוי כאן: חייבים לנקות את הפסיקים לפני החישוב
+        const p = LocalFormat.clean(document.getElementById('loanAmount').value);
         const r = parseFloat(document.getElementById('interest').value) / 100 / 12;
         const n = parseFloat(document.getElementById('years').value) * 12;
 
@@ -85,6 +93,26 @@
             amount: finalAmount
         }, '*');
     }
+
+
+    const LocalFormat = {
+    // מנקה פסיקים ומחזיר מספר
+    clean: (val) => {
+        if (!val) return 0;
+        return parseFloat(String(val).replace(/[^\d.]/g, '')) || 0;
+    },
+    // מוסיף פסיקים לתצוגה
+    format: (num) => {
+        return new Intl.NumberFormat('he-IL').format(Math.floor(num));
+    }
+};
+
+// הפונקציה שנקראת מה-oninput של ה-input
+window.formatLoanInput = (input) => {
+    let raw = LocalFormat.clean(input.value);
+    if (raw === 0 && input.value === "") return;
+    input.value = LocalFormat.format(raw);
+};
 </script>
 
 </body>
